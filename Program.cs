@@ -39,7 +39,7 @@ public static class Program
                 StockfishInterface.TestStockfish();
                 break;
             case "evaluatepositions":
-                StockfishInterface.TestStockfish();
+                StockfishInterface.EvaluateAll();
                 break;
         }
     }

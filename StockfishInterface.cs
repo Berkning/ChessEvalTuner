@@ -62,7 +62,7 @@ public static class StockfishInterface
 
         while (true)
         {
-            if (stopwatch.ElapsedMilliseconds % 10000 == 0)
+            if (stopwatch.ElapsedMilliseconds % 5000 == 0)
             {
                 Console.WriteLine(positionsEvaled + '/' + totalPositionCount + " positions evaled - Time: " + stopwatch.ElapsedMilliseconds / 1000 + 's');
                 SaveData.Save(PositionPicker.positions);
