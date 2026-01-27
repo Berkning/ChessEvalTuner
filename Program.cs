@@ -33,10 +33,13 @@ public static class Program
                 PositionPicker.positions = SaveData.Load();
                 break;
             case "pickpositions":
-                //PositionPicker.Pick(PGNParser.games);
+                PositionPicker.Pick(PGNParser.games);
                 break;
-            case "evaluate":
-                StockfishInterface.EvaluateGames(PositionPicker.positions);
+            case "testfish":
+                StockfishInterface.TestStockfish();
+                break;
+            case "evaluatepositions":
+                StockfishInterface.TestStockfish();
                 break;
         }
     }
