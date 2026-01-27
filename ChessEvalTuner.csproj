@@ -8,4 +8,8 @@
     <BaseOutputPath>/home/berkning/Documents/GitHub/ChessEvalTuner/bin</BaseOutputPath>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+  </ItemGroup>
+
 </Project>

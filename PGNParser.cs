@@ -1,3 +1,5 @@
+using Newtonsoft.Json;
+
 public static class PGNParser
 {
     public static List<Game> games = new List<Game>();
@@ -80,9 +82,13 @@ public static class PGNParser
     }
 }
 
-public struct Game
+public class Game
 {
     public string fen; //Starting position for the game
     public List<string> moves; //Moves played in the game
-    public float stockfishEval;
+
+    // public override string ToString()
+    // {
+    //     return JsonConvert.SerializeObject(this);
+    // }
 }

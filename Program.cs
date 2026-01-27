@@ -26,6 +26,18 @@ public static class Program
             case "parse":
                 PGNParser.ParseAll(args[1]);
                 break;
+            case "save":
+                SaveData.Save(PositionPicker.positions);
+                break;
+            case "load":
+                PositionPicker.positions = SaveData.Load();
+                break;
+            case "pickpositions":
+                //PositionPicker.Pick(PGNParser.games);
+                break;
+            case "evaluate":
+                StockfishInterface.EvaluateGames(PositionPicker.positions);
+                break;
         }
     }
 }
