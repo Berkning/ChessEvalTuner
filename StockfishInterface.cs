@@ -5,7 +5,7 @@ using System.Diagnostics;
 
 public static class StockfishInterface
 {
-    private const int NodeCap = 2000000;
+    private const int NodeCap = 1000000;
     private const int HalfNodeCap = NodeCap / 2;
 
     private static StockfishThread[] stockfishInstances;
@@ -29,9 +29,7 @@ public static class StockfishInterface
     {
         for (int i = 0; i < 64; i++)
         {
-            Position position = new Position();
-            position.startFen = "bench";
-            position.stockfishEval = i;
+            Position position = new Position("bench", "", i);
 
             positionQueue.Enqueue(position);
         }
@@ -40,6 +38,8 @@ public static class StockfishInterface
     public static void EvaluateAll()
     {
         SaveData.Save(PositionPicker.positions);
+
+        evaluatedPositions.Clear();
 
         Console.WriteLine("Adding positions to evaluation queue...");
 
@@ -62,9 +62,9 @@ public static class StockfishInterface
 
         while (true)
         {
-            if (stopwatch.ElapsedMilliseconds % 5000 == 0)
+            if (stopwatch.ElapsedMilliseconds % 25000 == 0)
             {
-                Console.WriteLine(positionsEvaled + '/' + totalPositionCount + " positions evaled - Time: " + stopwatch.ElapsedMilliseconds / 1000 + 's');
+                Console.WriteLine(positionsEvaled + "/" + totalPositionCount + " positions evaled - Time: " + stopwatch.ElapsedMilliseconds / 1000 + 's');
                 SaveData.Save(PositionPicker.positions);
             }
 
@@ -73,18 +73,18 @@ public static class StockfishInterface
                 PositionPicker.positions.Add(position);
                 positionsEvaled++;
 
-                if (positionsEvaled == totalPositionCount) break;
+                if (positionsEvaled >= totalPositionCount) break;
             }
         }
 
-        Console.WriteLine(positionsEvaled + '/' + totalPositionCount + " positions evaled - Time: " + stopwatch.ElapsedMilliseconds / 1000 + 's');
+        Console.WriteLine(positionsEvaled + "/" + totalPositionCount + " positions evaled - Time: " + stopwatch.ElapsedMilliseconds / 1000 + 's');
 
         Console.WriteLine("All evals done");
         SaveData.Save(PositionPicker.positions);
     }
 
 
-    public struct StockfishThread
+    public struct StockfishThread //TODO: Send 'd' to stockfish to get position fen -> just makes it easier when training
     {
         private Process stockfish;
 
@@ -112,7 +112,9 @@ public static class StockfishInterface
                     }
                     else
                     {
-                        position.stockfishEval = Eval(position);
+                        float eval = Eval(position);
+
+                        evaluatedPositions.Add(new Position(position.startFen, position.moves, eval));
                     }
                 }
             }
@@ -135,14 +137,17 @@ public static class StockfishInterface
 
         private float Eval(Position position)
         {
-            stockfish.StandardInput.WriteLine("position fen " + position.startFen + " moves " + position.moves);
-            stockfish.StandardInput.WriteLine("isready");
+            string posString = "position fen " + position.startFen + " moves " + position.moves;
+            //Console.WriteLine("Giving this to SF '" + posString + "'");
 
-            if (stockfish.StandardOutput.ReadLine() != "readyok")
-            {
-                Console.WriteLine("did not recieve readyok response");
-                return -10000f;
-            }
+            stockfish.StandardInput.WriteLine("position fen " + position.startFen + " moves " + position.moves);
+            // stockfish.StandardInput.WriteLine("isready");
+
+            // if (stockfish.StandardOutput.ReadLine() != "readyok")
+            // {
+            //     Console.WriteLine("did not recieve readyok response");
+            //     return -10000f;
+            // }
 
             stockfish.StandardInput.WriteLine("go nodes " + NodeCap);
 
@@ -170,12 +175,19 @@ public static class StockfishInterface
         private float ParseEval(string log)
         {
             int cpIndex = log.IndexOf("cp");
-            int nodeIndex = log.IndexOf("nodes");
 
-            if (cpIndex == -1 && nodeIndex == -1) return -67.67f; //Just a normal log prob
             if (cpIndex == -1) return float.MaxValue; //Position is mate
 
-            return float.Parse(log.Substring(cpIndex + 3, nodeIndex - 2));
+            string s = "";
+
+            for (int i = cpIndex + 3; i < log.Length; i++)
+            {
+                if (log[i] == ' ') break;
+
+                s += log[i];
+            }
+
+            return float.Parse(s) / 100f;
         }
 
         // public float GetEval(string _fen, string _moves)

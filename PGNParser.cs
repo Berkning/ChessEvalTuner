@@ -33,8 +33,8 @@ public static class PGNParser
 
         using (StreamReader stream = new StreamReader(pgnPath))
         {
-            Game currentGame = new Game();
             int linesSinceFen = 246642;
+            string fen = "ØØØ";
 
             while (!stream.EndOfStream)
             {
@@ -46,23 +46,22 @@ public static class PGNParser
 
                 if (line.Contains("FEN"))
                 {
-                    string fen = line.Substring(6, line.Length - 8);
+                    fen = line.Substring(6, line.Length - 8);
 
-                    currentGame.fen = fen;
                     linesSinceFen = 0;
                 }
                 else if (linesSinceFen == 4)
                 {
                     string[] moves = line.Split(' ');
 
-                    currentGame.moves = new List<string>();
+                    List<string> moveList = new List<string>();
 
                     for (int i = 0; i < moves.Length - 1; i += 2)
                     {
-                        currentGame.moves.Add(moves[i]);
+                        moveList.Add(moves[i]);
                     }
 
-                    games.Add(currentGame);
+                    games.Add(new Game(fen, moveList));
                 }
             }
 
@@ -86,6 +85,12 @@ public class Game
 {
     public string fen; //Starting position for the game
     public List<string> moves; //Moves played in the game
+
+    public Game(string _fen, List<string> _moves)
+    {
+        fen = _fen;
+        moves = _moves;
+    }
 
     // public override string ToString()
     // {
