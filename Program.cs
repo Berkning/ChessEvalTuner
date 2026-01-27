@@ -2,12 +2,30 @@ public static class Program
 {
     public static void Main(string[] args)
     {
-        string message = string.Empty;
+        string? message = string.Empty;
 
         while (message != "quit")
         {
             message = Console.ReadLine();
-            Console.WriteLine("poo");
+
+            if (message == null) continue;
+
+            RecieveCommand(message);
+        }
+    }
+
+    private static void RecieveCommand(string command)
+    {
+        string[] args = command.Split(' ');
+
+        switch (args[0])
+        {
+            case "logall":
+                PGNParser.LogGames();
+                break;
+            case "parse":
+                PGNParser.ParseAll(args[1]);
+                break;
         }
     }
 }
