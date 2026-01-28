@@ -62,7 +62,7 @@ public static class StockfishInterface
 
         while (true)
         {
-            if (stopwatch.ElapsedMilliseconds % 25000 == 0)
+            if (stopwatch.ElapsedMilliseconds % 30000 == 0)
             {
                 Console.WriteLine(positionsEvaled + "/" + totalPositionCount + " positions evaled - Time: " + stopwatch.ElapsedMilliseconds / 1000 + 's');
                 SaveData.Save(PositionPicker.positions);
@@ -137,6 +137,7 @@ public static class StockfishInterface
 
         private float Eval(Position position)
         {
+            stockfish.StandardInput.WriteLine("setoption Clear Hash");
             string posString = "position fen " + position.startFen + " moves " + position.moves;
             //Console.WriteLine("Giving this to SF '" + posString + "'");
 
