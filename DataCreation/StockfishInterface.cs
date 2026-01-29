@@ -5,7 +5,7 @@ using System.Diagnostics;
 
 public static class StockfishInterface
 {
-    private const int NodeCap = 1000000;
+    private const int NodeCap = 500000;
     private const int HalfNodeCap = NodeCap / 2;
 
     private static StockfishThread[] stockfishInstances;
@@ -15,8 +15,8 @@ public static class StockfishInterface
 
     static StockfishInterface()
     {
-        stockfishInstances = new StockfishThread[24];
-        threads = new Thread[24];
+        stockfishInstances = new StockfishThread[23];
+        threads = new Thread[23];
 
         for (int i = 0; i < threads.Length; i++)
         {
@@ -138,6 +138,7 @@ public static class StockfishInterface
         private float Eval(Position position)
         {
             stockfish.StandardInput.WriteLine("setoption Clear Hash");
+
             string posString = "position fen " + position.startFen + " moves " + position.moves;
             //Console.WriteLine("Giving this to SF '" + posString + "'");
 
