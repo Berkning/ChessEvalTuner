@@ -3,14 +3,18 @@
 public static class Trainer
 {
     public static List<Position> trainingData;
-    private static float learningRate = 0.00001f;
+    private static float learningRate = 0.00005f;
     private static float accumulatedLoss = 0f;
-    private const int BatchSize = 256;
+    private const int BatchSize = 64;
 
     public static void BeginTraining()
     {
-        Console.WriteLine("Loading file...");
-        trainingData = SaveData.Load();
+        if (trainingData == null || trainingData.Count == 0)
+        {
+            Console.WriteLine("Loading file...");
+            trainingData = SaveData.Load();
+        }
+        else Console.WriteLine("Training data already present, skipping load");
 
         Console.WriteLine("Shuffling data...");
         trainingData = trainingData.Shuffle().ToList();
@@ -33,7 +37,7 @@ public static class Trainer
             ModelInterface.RecieveCommand(("training fen " + trainingData[i].startFen + " moves " + trainingData[i].moves).Split(' ')); //Really janky and slow way to do this
 
             float rawEval = ModelInterface.Evaluate();
-            float ourEval = rawEval;//Squash(rawEval);
+            float ourEval = Squash(rawEval);
 
 
             float diff = ourEval - target;
@@ -45,7 +49,7 @@ public static class Trainer
             //Accumulate gradients
             for (int w = 0; w < MLEvaluation.weights.Length; w++)
             {
-                gradients[w] += 2f * diff * /* dTanh * */ MLEvaluation.features[w]; /// 4f;
+                gradients[w] += 2f * diff * dTanh * (MLEvaluation.features[w] / 6f); /// 4f;
             }
 
 

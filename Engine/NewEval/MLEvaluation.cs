@@ -31,7 +31,7 @@ public class MLEvaluation
 
         //Console.WriteLine("Phase: " + phase);
 
-        return result;//* perspective;
+        return result * perspective;
     }
 
     private void CalculateFeatures(Board board)
