@@ -6,6 +6,7 @@ public class MLEvaluation
     //TODO: Mobility? Rooks on open files? Mopup score? 
     public static readonly float[] weights = new float[768 + 6 + 9 + 1]; //TODO: We can easily eliminate bounds checks when using these arrays
     public static float[] features = new float[768 + 6 + 9 + 1]; //TODO: We can easily eliminate bounds checks when using these arrays
+    public static float bias;
 
     public float GetEval(Board board)
     {
@@ -20,7 +21,7 @@ public class MLEvaluation
 
 
 
-        float result = 0f;
+        float result = bias;
 
         for (int i = 0; i < weights.Length; i++)
         {
@@ -49,6 +50,7 @@ public class MLEvaluation
     {
         Console.WriteLine("Weights: " + JsonConvert.SerializeObject(weights));
         Console.WriteLine("Features: " + JsonConvert.SerializeObject(features));
+        Console.WriteLine("Bias: " + bias);
     }
 
     #region Phase

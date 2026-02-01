@@ -27,6 +27,22 @@ public static class ModelInterface
             case "d":
                 Console.WriteLine(FenUtility.GetCurrentFen(board));
                 break;
+            case "biggest":
+                float biggest = -1f;
+                int index = -1;
+
+                for (int i = 0; i < MLEvaluation.weights.Length; i++)
+                {
+                    float size = Math.Abs(MLEvaluation.weights[i]);
+                    if (size > biggest)
+                    {
+                        biggest = size;
+                        index = i;
+                    }
+                }
+
+                Console.WriteLine("Biggest weight is: " + biggest + " at index: " + index);
+                break;
         }
     }
 

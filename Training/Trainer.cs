@@ -3,7 +3,7 @@
 public static class Trainer
 {
     public static List<Position> trainingData;
-    private static float learningRate = 0.00005f;
+    private static float learningRate = 0.0001f;
     private static float lambda = 0.00001f;
     private static float accumulatedLoss = 0f;
     private const int BatchSize = 256;
@@ -28,7 +28,8 @@ public static class Trainer
 
         Console.WriteLine("Beginning training loop...");
 
-        float[] gradients = new float[MLEvaluation.weights.Length];
+        float[] gradients = new float[MLEvaluation.weights.Length + 1];
+        int biasGradientIndex = MLEvaluation.weights.Length;
 
         for (int i = 0; i < trainingData.Count; i++)
         {
@@ -54,6 +55,8 @@ public static class Trainer
                 gradients[w] += 2f * lambda * w; //L2 Regularization
             }
 
+            gradients[biasGradientIndex] += 2f * diff * dTanh * 1f;
+
 
             if (i != 0 && i % BatchSize == 0)
             {
@@ -67,6 +70,9 @@ public static class Trainer
                     norm += gradients[w] * gradients[w];
                     gradients[w] = 0;
                 }
+
+                MLEvaluation.bias -= learningRate * (gradients[biasGradientIndex] / BatchSize);
+                gradients[biasGradientIndex] = 0;
 
                 //Console.WriteLine("Grad norm: " + Math.Sqrt(norm));
             }
