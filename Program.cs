@@ -41,6 +41,12 @@ public static class Program
             case "evaluatepositions":
                 StockfishInterface.EvaluateAll();
                 break;
+            case "training":
+                ModelInterface.RecieveCommand(args);
+                break;
+            case "begin":
+                Trainer.BeginTraining();
+                break;
         }
     }
 }

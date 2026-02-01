@@ -25,6 +25,42 @@ public static class StockfishInterface
         }
     }
 
+    public static void TranslateMoves(ref List<Position> positions)
+    {
+        ProcessStartInfo startInfo = new ProcessStartInfo
+        {
+            FileName = @"./stockfish",
+            Arguments = "",
+            RedirectStandardInput = true,
+            RedirectStandardOutput = true,
+            UseShellExecute = false
+        };
+
+        Process stockfish = Process.Start(startInfo);
+
+        for (int i = 0; i < positions.Count; i++)
+        {
+            stockfish.StandardInput.WriteLine("position fen " + positions[i].startFen + " moves " + positions[i].moves);
+
+            stockfish.StandardInput.WriteLine("d");
+
+            string o = "";
+
+            while (!o.Contains("Fen"))
+            {
+                o = stockfish.StandardOutput.ReadLine();
+            }
+
+            positions[i].startFen = o.Substring(5, o.Length - 5);
+            positions[i].moves = "";
+        }
+
+        Console.WriteLine("Moves translated");
+        stockfish.Kill();
+        stockfish.Close();
+        stockfish.Dispose();
+    }
+
     public static void TestStockfish()
     {
         for (int i = 0; i < 64; i++)
