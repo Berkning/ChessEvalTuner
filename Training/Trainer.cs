@@ -3,9 +3,9 @@
 public static class Trainer
 {
     public static List<Position> trainingData;
-    private static float learningRate = 0.000001f;
+    private static float learningRate = 0.00001f;
     private static float accumulatedLoss = 0f;
-    private const int BatchSize = 512;
+    private const int BatchSize = 256;
 
     public static void BeginTraining()
     {
@@ -13,7 +13,7 @@ public static class Trainer
         trainingData = SaveData.Load();
 
         Console.WriteLine("Shuffling data...");
-        trainingData.Shuffle();
+        trainingData = trainingData.Shuffle().ToList();
 
         Console.WriteLine("Random data check: " + trainingData[47].stockfishEval);
 
@@ -33,7 +33,7 @@ public static class Trainer
             ModelInterface.RecieveCommand(("training fen " + trainingData[i].startFen + " moves " + trainingData[i].moves).Split(' ')); //Really janky and slow way to do this
 
             float rawEval = ModelInterface.Evaluate();
-            float ourEval = Squash(rawEval);
+            float ourEval = rawEval;//Squash(rawEval);
 
 
             float diff = ourEval - target;
@@ -45,7 +45,7 @@ public static class Trainer
             //Accumulate gradients
             for (int w = 0; w < MLEvaluation.weights.Length; w++)
             {
-                gradients[w] += diff * dTanh * MLEvaluation.features[w] / 4f;
+                gradients[w] += 2f * diff * /* dTanh * */ MLEvaluation.features[w]; /// 4f;
             }
 
 
@@ -57,18 +57,18 @@ public static class Trainer
                 for (int w = 0; w < MLEvaluation.weights.Length; w++)
                 {
                     MLEvaluation.weights[w] -= learningRate * (gradients[w] / BatchSize);
-                    gradients[w] = 0;
 
                     norm += gradients[w] * gradients[w];
+                    gradients[w] = 0;
                 }
 
-                Console.WriteLine("Grad norm: " + Math.Sqrt(norm));
+                //Console.WriteLine("Grad norm: " + Math.Sqrt(norm));
             }
 
 
-            if (i % 1000 == 0)
+            if (i % 10000 == 0)
             {
-                Console.WriteLine(i + "/" + trainingData.Count + " Loss: " + accumulatedLoss);
+                Console.WriteLine(i + "/" + trainingData.Count + " Loss: " + accumulatedLoss / 10000f);
                 accumulatedLoss = 0f;
             }
         }
@@ -78,7 +78,7 @@ public static class Trainer
 
     private static float Squash(float eval)
     {
-        return (float)Math.Tanh(eval / 4f);
+        return (float)Math.Tanh(eval / 6f);
         return eval;
     }
 }
