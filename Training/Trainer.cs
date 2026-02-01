@@ -4,6 +4,7 @@ public static class Trainer
 {
     public static List<Position> trainingData;
     private static float learningRate = 0.00005f;
+    private static float lambda = 0.00001f;
     private static float accumulatedLoss = 0f;
     private const int BatchSize = 256;
 
@@ -50,6 +51,7 @@ public static class Trainer
             for (int w = 0; w < MLEvaluation.weights.Length; w++)
             {
                 gradients[w] += 2f * diff * dTanh * (MLEvaluation.features[w] / 6f); /// 4f;
+                gradients[w] += 2f * lambda * w; //L2 Regularization
             }
 
 
