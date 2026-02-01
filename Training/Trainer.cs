@@ -5,7 +5,7 @@ public static class Trainer
     public static List<Position> trainingData;
     private static float learningRate = 0.00005f;
     private static float accumulatedLoss = 0f;
-    private const int BatchSize = 64;
+    private const int BatchSize = 256;
 
     public static void BeginTraining()
     {

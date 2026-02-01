@@ -40,6 +40,12 @@ public static class StockfishInterface
 
         for (int i = 0; i < positions.Count; i++)
         {
+            if (positions[i].moves == "" || positions[i].moves.IsWhiteSpace())
+            {
+                //Console.WriteLine("Skip");
+                continue;
+            }
+
             stockfish.StandardInput.WriteLine("position fen " + positions[i].startFen + " moves " + positions[i].moves);
 
             stockfish.StandardInput.WriteLine("d");
