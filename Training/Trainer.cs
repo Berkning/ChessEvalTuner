@@ -57,7 +57,7 @@ public static class Trainer
             gradients[biasGradientIndex] += 2f * diff * dTanh * 1f;
 
 
-            if (i != 0 && i % BatchSize == 0)
+            if ((i + 1) % BatchSize == 0) //Because index starts at 0
             {
                 float norm = 0;
 
