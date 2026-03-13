@@ -10,7 +10,12 @@ public static class ModelInterface
         switch (args[1])
         {
             case "log":
-                MLEvaluation.LogData();
+                if (args.Length < 3) MLEvaluation.LogData();
+                else
+                {
+                    int shift = int.Parse(args[2]);
+                    MLEvaluation.LogDataAsInt(shift);
+                }
                 break;
             case "randomize":
                 for (int i = 0; i < MLEvaluation.weights.Length; i++)

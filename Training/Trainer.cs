@@ -52,7 +52,7 @@ public static class Trainer
             for (int w = 0; w < MLEvaluation.weights.Length; w++)
             {
                 gradients[w] += 2f * diff * dTanh * (MLEvaluation.features[w] / 6f); /// 4f;
-                gradients[w] += 2f * lambda * w; //L2 Regularization
+                gradients[w] += 2f * lambda * MLEvaluation.weights[w]; //L2 Regularization
             }
 
             gradients[biasGradientIndex] += 2f * diff * dTanh * 1f;

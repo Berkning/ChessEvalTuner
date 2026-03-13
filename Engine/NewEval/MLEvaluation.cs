@@ -5,7 +5,7 @@ public class MLEvaluation
 {
     //TODO: Mobility? Rooks on open files? Mopup score? 
     public static readonly float[] weights = new float[768 + 6 + 9 + 1]; //TODO: We can easily eliminate bounds checks when using these arrays
-    public static float[] features = new float[768 + 6 + 9 + 1]; //TODO: We can easily eliminate bounds checks when using these arrays
+    public static float[] features = new float[weights.Length]; //TODO: We can easily eliminate bounds checks when using these arrays
     public static float bias;
 
     public float GetEval(Board board)
@@ -51,6 +51,26 @@ public class MLEvaluation
         Console.WriteLine("Weights: " + JsonConvert.SerializeObject(weights));
         Console.WriteLine("Features: " + JsonConvert.SerializeObject(features));
         Console.WriteLine("Bias: " + bias);
+    }
+
+    public static void LogDataAsInt(int shift)
+    {
+        float multiplier = (float)Math.Pow(2f, shift);
+
+        int[] intWeights = new int[weights.Length];
+        //int[] intFeatures = new int[weights.Length];
+
+        for (int i = 0; i < weights.Length; i++)
+        {
+            intWeights[i] = (int)Math.Round(weights[i] * multiplier);
+            //intFeatures[i] = (int)Math.Round(features[i] * multiplier);
+        }
+
+        int intBias = (int)Math.Round(bias * multiplier);
+
+        Console.WriteLine("IntWeights: " + JsonConvert.SerializeObject(intWeights));
+        //Console.WriteLine("IntFeatures: " + JsonConvert.SerializeObject(intFeatures));
+        Console.WriteLine("IntBias: " + intBias);
     }
 
     #region Phase
