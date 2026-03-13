@@ -10,7 +10,7 @@ public class MLEvaluation
 
     public float GetEval(Board board)
     {
-        for (int i = 0; i < 768 + 6 + 9 + 1; i++)
+        for (int i = 0; i < weights.Length; i++)
         {
             features[i] = 0;
         }

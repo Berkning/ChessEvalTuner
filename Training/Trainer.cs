@@ -51,8 +51,7 @@ public static class Trainer
             //Accumulate gradients
             for (int w = 0; w < MLEvaluation.weights.Length; w++)
             {
-                gradients[w] += 2f * diff * dTanh * (MLEvaluation.features[w] / 6f); /// 4f;
-                gradients[w] += 2f * lambda * MLEvaluation.weights[w]; //L2 Regularization
+                gradients[w] += 2f * diff * dTanh * MLEvaluation.features[w]; /// 4f;
             }
 
             gradients[biasGradientIndex] += 2f * diff * dTanh * 1f;
@@ -62,16 +61,26 @@ public static class Trainer
             {
                 float norm = 0;
 
+                for (int w = 0; w < MLEvaluation.weights.Length; w++)
+                {
+                    gradients[w] /= BatchSize;
+                    gradients[w] += 2f * lambda * MLEvaluation.weights[w]; //L2 Regularization
+
+                    gradients[w] = Math.Clamp(gradients[w], -1f, 1f); //Gradient clipping
+                }
+
+                gradients[biasGradientIndex] /= BatchSize;
+
 
                 for (int w = 0; w < MLEvaluation.weights.Length; w++)
                 {
-                    MLEvaluation.weights[w] -= learningRate * (gradients[w] / BatchSize);
+                    MLEvaluation.weights[w] -= learningRate * gradients[w];
 
                     norm += gradients[w] * gradients[w];
                     gradients[w] = 0;
                 }
 
-                MLEvaluation.bias -= learningRate * (gradients[biasGradientIndex] / BatchSize);
+                MLEvaluation.bias -= learningRate * gradients[biasGradientIndex];
                 gradients[biasGradientIndex] = 0;
 
                 //Console.WriteLine("Grad norm: " + Math.Sqrt(norm));
