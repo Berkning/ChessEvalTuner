@@ -41,6 +41,7 @@ public static class Trainer
             float rawEval = ModelInterface.Evaluate();
             float ourEval = Squash(rawEval);
 
+            //Console.WriteLine($"rawEval {rawEval} target {target} ourEval {ourEval}");
 
             float diff = ourEval - target;
 

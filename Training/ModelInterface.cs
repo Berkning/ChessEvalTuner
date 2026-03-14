@@ -23,6 +23,10 @@ public static class ModelInterface
                     MLEvaluation.weights[i] = (Random.Shared.NextSingle() - 0.5f) / 10f;
                 }
                 break;
+            case "initializeWeights":
+                MLEvaluation.InitializeWeights();
+                Console.WriteLine("Initialized weights");
+                break;
             case "eval":
                 Console.WriteLine(evaluation.GetEval(board));
                 break;

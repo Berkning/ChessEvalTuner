@@ -46,6 +46,16 @@ public class MLEvaluation
         //LogData();
     }
 
+    public static void InitializeWeights()
+    {
+        //Initialize material weights by hand to give a good starting point
+        weights[768] = 1f; //Pawn weight
+        weights[769] = 3f; //Knight weight
+        weights[770] = 3f; //Bishop weight
+        weights[771] = 5f; //Rook weight
+        weights[772] = 9f; //Queen weight
+    }
+
     public static void LogData()
     {
         Console.WriteLine("Weights: " + JsonConvert.SerializeObject(weights));
