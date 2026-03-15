@@ -50,11 +50,11 @@ public class MLEvaluation
     public static void InitializeWeights()
     {
         //Initialize material weights by hand to give a good starting point
-        weights[768] = 1f; //Pawn weight
-        weights[769] = 3f; //Knight weight
-        weights[770] = 3f; //Bishop weight
-        weights[771] = 5f; //Rook weight
-        weights[772] = 9f; //Queen weight
+        weights[768] = 0.390625f; //Pawn weight
+        weights[769] = 1.171875f; //Knight weight
+        weights[770] = 1.171875f; //Bishop weight
+        weights[771] = 1.953125f; //Rook weight
+        weights[772] = 3.515625f; //Queen weight
     }
 
     public static void LogData()
@@ -340,11 +340,11 @@ public class MLEvaluation
 
         kingFile = BoardHelper.IndexToFile(board.blackKingSquare);
 
-        if (kingFile > 0 && !BitBoardHelper.ContainsSquare(board.GetPieceList(Piece.Pawn, 1).bitboard, board.blackKingSquare + PrecomputedData.UpLeft)) missingPawnDefenseDifference--;
+        if (kingFile > 0 && !BitBoardHelper.ContainsSquare(board.GetPieceList(Piece.Pawn, 1).bitboard, board.blackKingSquare + PrecomputedData.DownLeft)) missingPawnDefenseDifference--;
 
-        if (kingFile < 7 && !BitBoardHelper.ContainsSquare(board.GetPieceList(Piece.Pawn, 1).bitboard, board.blackKingSquare + PrecomputedData.UpRight)) missingPawnDefenseDifference--;
+        if (kingFile < 7 && !BitBoardHelper.ContainsSquare(board.GetPieceList(Piece.Pawn, 1).bitboard, board.blackKingSquare + PrecomputedData.DownRight)) missingPawnDefenseDifference--;
 
-        if (!BitBoardHelper.ContainsSquare(board.GetPieceList(Piece.Pawn, 1).bitboard, board.blackKingSquare + PrecomputedData.Up)) missingPawnDefenseDifference--;
+        if (!BitBoardHelper.ContainsSquare(board.GetPieceList(Piece.Pawn, 1).bitboard, board.blackKingSquare + PrecomputedData.Down)) missingPawnDefenseDifference--;
 
         features[783] = missingPawnDefenseDifference * (1f - phase / 100f);
     }
