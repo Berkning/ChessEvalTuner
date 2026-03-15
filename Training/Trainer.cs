@@ -3,7 +3,7 @@
 public static class Trainer
 {
     public static List<Position> trainingData;
-    private static float learningRate = 0.01f;
+    private static float learningRate = 0.025f;
     private static float lambda = 0.00001f;
     private static float accumulatedLoss = 0f;
     private const int BatchSize = 256;

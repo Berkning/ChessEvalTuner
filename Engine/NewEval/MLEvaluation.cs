@@ -44,6 +44,7 @@ public class MLEvaluation
         //LogData();
         CalculatePawnStructure(board);
         //LogData();
+        CalculateKingSafety(board);
     }
 
     public static void InitializeWeights()
@@ -345,7 +346,7 @@ public class MLEvaluation
 
         if (!BitBoardHelper.ContainsSquare(board.GetPieceList(Piece.Pawn, 1).bitboard, board.blackKingSquare + PrecomputedData.Up)) missingPawnDefenseDifference--;
 
-        features[783] = missingPawnDefenseDifference * (1f - phase);
+        features[783] = missingPawnDefenseDifference * (1f - phase / 100f);
     }
     #endregion
 
