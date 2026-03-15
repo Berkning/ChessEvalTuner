@@ -3,7 +3,7 @@
 public static class Trainer
 {
     public static List<Position> trainingData;
-    private static float learningRate = 0.0001f;
+    private static float learningRate = 0.001f;
     private static float lambda = 0.00001f;
     private static float accumulatedLoss = 0f;
     private const int BatchSize = 256;
@@ -20,10 +20,10 @@ public static class Trainer
         Console.WriteLine("Shuffling data...");
         trainingData = trainingData.Shuffle().ToList();
 
-        Console.WriteLine("Random data check: " + trainingData[47].stockfishEval);
+        //Console.WriteLine("Random data check: " + trainingData[47].stockfishEval);
 
-        Console.WriteLine("Translating moves...");
-        StockfishInterface.TranslateMoves(ref trainingData);
+        //Console.WriteLine("Translating moves...");
+        //StockfishInterface.TranslateMoves(ref trainingData);
 
 
         Console.WriteLine("Beginning training loop...");
@@ -33,41 +33,43 @@ public static class Trainer
 
         for (int i = 0; i < trainingData.Count; i++)
         {
-            float target = Squash(trainingData[i].stockfishEval);
+            float target = trainingData[i].result;
 
             ModelInterface.board = new Board(); //Just to be safe
-            ModelInterface.RecieveCommand(("training fen " + trainingData[i].startFen + " moves " + trainingData[i].moves).Split(' ')); //Really janky and slow way to do this
+            ModelInterface.LoadPosition(("training fen " + trainingData[i].fen).Split(' ')); //Kinda janky
 
             float rawEval = ModelInterface.Evaluate();
-            float ourEval = Squash(rawEval);
+            float ourPrediction = Sigmoid(rawEval);
 
             //Console.WriteLine($"rawEval {rawEval} target {target} ourEval {ourEval}");
 
-            float diff = ourEval - target;
+            float diff = ourPrediction - target;
 
             accumulatedLoss += diff * diff;
-
-            float dTanh = 1f - ourEval * ourEval;
 
             //Accumulate gradients
             for (int w = 0; w < MLEvaluation.weights.Length; w++)
             {
-                gradients[w] += 2f * diff * dTanh * MLEvaluation.features[w]; /// 4f;
+                //gradients[w] += 2f * diff * dTanh * MLEvaluation.features[w]; /// 4f;
+
+                gradients[w] += -(target - ourPrediction) * SigmoidDiff(ourPrediction) * MLEvaluation.features[w];
             }
 
-            gradients[biasGradientIndex] += 2f * diff * dTanh * 1f;
+            gradients[biasGradientIndex] += -(target - ourPrediction) * SigmoidDiff(ourPrediction);
+
+            //gradients[biasGradientIndex] += 2f * diff * dTanh * 1f; //TODO:
 
 
             if ((i + 1) % BatchSize == 0) //Because index starts at 0
             {
-                float norm = 0;
+                //float norm = 0;
 
                 for (int w = 0; w < MLEvaluation.weights.Length; w++)
                 {
                     gradients[w] /= BatchSize;
-                    gradients[w] += 2f * lambda * MLEvaluation.weights[w]; //L2 Regularization
+                    //gradients[w] += 2f * lambda * MLEvaluation.weights[w]; //L2 Regularization
 
-                    gradients[w] = Math.Clamp(gradients[w], -1f, 1f); //Gradient clipping
+                    //gradients[w] = Math.Clamp(gradients[w], -1f, 1f); //Gradient clipping
                 }
 
                 gradients[biasGradientIndex] /= BatchSize;
@@ -77,7 +79,7 @@ public static class Trainer
                 {
                     MLEvaluation.weights[w] -= learningRate * gradients[w];
 
-                    norm += gradients[w] * gradients[w];
+                    //norm += gradients[w] * gradients[w];
                     gradients[w] = 0;
                 }
 
@@ -90,6 +92,7 @@ public static class Trainer
 
             if (i % 10000 == 0)
             {
+                Console.WriteLine("CheckEval: " + rawEval);
                 Console.WriteLine(i + "/" + trainingData.Count + " Loss: " + accumulatedLoss / 10000f);
                 accumulatedLoss = 0f;
             }
@@ -98,9 +101,43 @@ public static class Trainer
         Console.WriteLine("Training Done.");
     }
 
-    private static float Squash(float eval)
+    public static float GetAverageEvaluationError() //Used for tuning K for a specific dataset
     {
-        return (float)Math.Tanh(eval / 6f);
-        return eval;
+        if (trainingData == null || trainingData.Count == 0)
+        {
+            Console.WriteLine("Loading file...");
+            trainingData = SaveData.Load();
+        }
+
+        float errorSum = 0f;
+
+        for (int i = 0; i < trainingData.Count; i++)
+        {
+            ModelInterface.board = new Board(); //Just to be safe
+            ModelInterface.LoadPosition(("training fen " + trainingData[i].fen).Split(' '));
+
+            float rawEval = ModelInterface.Evaluate();
+
+            float ourPrediction = Sigmoid(rawEval);
+
+            float error = (float)Math.Pow(trainingData[i].result - ourPrediction, 2d);
+
+            errorSum += error;
+        }
+
+        return errorSum / trainingData.Count;
+    }
+
+
+    public static float K = 1f;
+
+    private static float Sigmoid(float eval)
+    {
+        return (float)(1d / (1d + Math.Pow(10d, -K * eval / 400d)));
+    }
+
+    private static float SigmoidDiff(float prediction)
+    {
+        return 2.302585093f * K / 400f * (prediction * (1f - prediction));
     }
 }

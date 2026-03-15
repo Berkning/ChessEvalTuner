@@ -21,25 +21,33 @@ public static class Program
         switch (args[0])
         {
             case "logall":
-                PGNParser.LogGames();
+                PGNParser.LogPositions();
                 break;
             case "parse":
                 PGNParser.ParseAll(args[1]);
                 break;
             case "save":
-                SaveData.Save(PositionPicker.positions);
+                SaveData.Save(PGNParser.positions);
                 break;
             case "load":
                 PositionPicker.positions = SaveData.Load();
                 break;
             case "pickpositions":
-                PositionPicker.Pick(PGNParser.games);
+                //PositionPicker.Pick(PGNParser.games);
                 break;
+            //TODO: Add option after pickpositions to pick out some quiet positions from the current ones to train on.
             case "testfish":
-                StockfishInterface.TestStockfish();
+                //StockfishInterface.TestStockfish();
                 break;
             case "evaluatepositions":
-                StockfishInterface.EvaluateAll();
+                //StockfishInterface.EvaluateAll();
+                break;
+            case "GetAEE":
+                Console.WriteLine(Trainer.GetAverageEvaluationError());
+                break;
+            case "SetK":
+                Trainer.K = float.Parse(args[1]);
+                Console.WriteLine("K is now " + Trainer.K);
                 break;
             case "training":
                 ModelInterface.RecieveCommand(args);

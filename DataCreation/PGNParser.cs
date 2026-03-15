@@ -2,7 +2,7 @@ using Newtonsoft.Json;
 
 public static class PGNParser
 {
-    public static List<Game> games = new List<Game>();
+    public static List<Position> positions = new List<Position>();
 
     public static void ParseAll(string folder)
     {
@@ -10,9 +10,9 @@ public static class PGNParser
 
         for (int i = 0; i < files.Length; i++)
         {
-            if (!files[i].Contains(".pgn"))
+            if (!files[i].Contains(".epd"))
             {
-                Console.WriteLine("File " + files[i] + " is not a .pgn file");
+                Console.WriteLine("File " + files[i] + " is not a .epd file");
                 continue;
             }
 
@@ -21,79 +21,55 @@ public static class PGNParser
 
     }
 
-    private static void ParseAndAdd(string pgnPath)
+    private static void ParseAndAdd(string epdPath)
     {
-        Console.WriteLine("Parsing .pgn file at '" + pgnPath + '\'');
+        Console.WriteLine("Parsing .epd file at '" + epdPath + '\'');
 
-        if (!File.Exists(pgnPath))
+        if (!File.Exists(epdPath))
         {
-            Console.WriteLine("Specified .pgn file doesn't exist");
+            Console.WriteLine("Specified .epd file doesn't exist");
             return;
         }
 
-        using (StreamReader stream = new StreamReader(pgnPath))
+        using (StreamReader stream = new StreamReader(epdPath))
         {
-            int linesSinceFen = 246642;
-            string fen = "ØØØ";
-
             while (!stream.EndOfStream)
             {
                 string? line = stream.ReadLine();
-                linesSinceFen++;
 
                 if (line == null) continue;
 
+                string[] parts = line.Split(" | ");
 
-                if (line.Contains("FEN"))
+                string fen = parts[0];
+
+                float result = -1f;
+
+                if (parts[1].Contains("1-0")) result = 1f;
+                else if (parts[1].Contains("1/2-1/2")) result = 0.5f;
+                else if (parts[1].Contains("0-1")) result = 0f;
+
+                if (result == -1f)
                 {
-                    fen = line.Substring(6, line.Length - 8);
-
-                    linesSinceFen = 0;
+                    Console.WriteLine("Couldn't parse result string: " + parts[1]);
+                    return;
                 }
-                else if (linesSinceFen == 4)
-                {
-                    string[] moves = line.Split(' ');
 
-                    List<string> moveList = new List<string>();
-
-                    for (int i = 0; i < moves.Length - 1; i += 2)
-                    {
-                        moveList.Add(moves[i]);
-                    }
-
-                    games.Add(new Game(fen, moveList));
-                }
+                positions.Add(new Position(fen, result));
             }
 
-            Console.WriteLine("Parsed all games. " + games.Count + " games are now loaded");
+            Console.WriteLine("Parsed all positions. " + positions.Count + " positions are now loaded");
         }
     }
 
-    public static void LogGames()
+    public static void LogPositions()
     {
-        for (int i = 0; i < games.Count; i++)
+        for (int i = 0; i < positions.Count; i++)
         {
-            string moveString = "";
-            foreach (string move in games[i].moves) moveString += move + ' ';
+            //string moveString = "";
+            //foreach (string move in positions[i].moves) moveString += move + ' ';
 
-            Console.WriteLine("Game #" + (i + 1) + " Fen: " + games[i].fen + "   Moves: " + moveString);
+            Console.WriteLine("Position #" + (i + 1) + " Fen: " + positions[i].fen + " Result: " + positions[i].result/*+ "   Moves: " + moveString*/);
         }
     }
-}
-
-public class Game
-{
-    public string fen; //Starting position for the game
-    public List<string> moves; //Moves played in the game
-
-    public Game(string _fen, List<string> _moves)
-    {
-        fen = _fen;
-        moves = _moves;
-    }
-
-    // public override string ToString()
-    // {
-    //     return JsonConvert.SerializeObject(this);
-    // }
 }

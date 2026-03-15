@@ -4,7 +4,7 @@ public static class PositionPicker
 {
     public static List<Position> positions = new List<Position>();
 
-    public static void Pick(List<Game> games)
+    /*public static void Pick(List<Game> games)
     {
         if (positions.Count != 0)
         {
@@ -55,19 +55,17 @@ public static class PositionPicker
 
         Console.WriteLine("Got " + duplicates + " duplicates");
         Console.WriteLine("Picked " + positions.Count + " positions");
-    }
+    }*/
 }
 
 public class Position
 {
-    public string startFen;
-    public string moves;
-    public float stockfishEval;
+    public string fen;
+    public float result; //0 = black win, 0.5 = draw, 1 = white win
 
-    public Position(string _fen, string _moves, float _eval)
+    public Position(string _fen, float _result)
     {
-        startFen = _fen;
-        moves = _moves;
-        stockfishEval = _eval;
+        fen = _fen;
+        result = _result;
     }
 }

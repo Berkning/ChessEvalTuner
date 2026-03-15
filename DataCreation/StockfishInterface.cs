@@ -3,7 +3,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 
-public static class StockfishInterface
+/*public static class StockfishInterface
 {
     private const int NodeCap = 500000;
     private const int HalfNodeCap = NodeCap / 2;
@@ -247,4 +247,4 @@ public static class StockfishInterface
 
         // }
     }
-}
+}*/

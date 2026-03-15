@@ -18,9 +18,12 @@ public static class ModelInterface
                 }
                 break;
             case "randomize":
+                float multiplier = float.Parse(args[2]);
+                Console.WriteLine("Randomizing weights from " + (-multiplier) + " to " + multiplier);
+
                 for (int i = 0; i < MLEvaluation.weights.Length; i++)
                 {
-                    MLEvaluation.weights[i] = (Random.Shared.NextSingle() - 0.5f) / 10f;
+                    MLEvaluation.weights[i] = (Random.Shared.NextSingle() - 0.5f) * 2f * multiplier;
                 }
                 break;
             case "initializeWeights":
@@ -60,7 +63,7 @@ public static class ModelInterface
         return evaluation.GetEval(board);
     }
 
-    private static void LoadPosition(string[] args)
+    public static void LoadPosition(string[] args)
     {
         int moveStartIndex = -1;
         string fen = "";

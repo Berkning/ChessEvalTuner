@@ -28,11 +28,11 @@ public class MLEvaluation
             result += features[i] * weights[i];
         }
 
-        int perspective = board.colorToMove == Piece.White ? 1 : -1;
+        int perspective = board.colorToMove == Piece.White ? 1 : -1; //TODO: Remove i think
 
         //Console.WriteLine("Phase: " + phase);
 
-        return result * perspective;
+        return result /** perspective*/;
     }
 
     private void CalculateFeatures(Board board)
