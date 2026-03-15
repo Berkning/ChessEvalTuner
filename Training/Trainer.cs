@@ -3,7 +3,7 @@
 public static class Trainer
 {
     public static List<Position> trainingData;
-    private static float learningRate = 0.001f;
+    private static float learningRate = 0.01f;
     private static float lambda = 0.00001f;
     private static float accumulatedLoss = 0f;
     private const int BatchSize = 256;
@@ -133,11 +133,11 @@ public static class Trainer
 
     private static float Sigmoid(float eval)
     {
-        return (float)(1d / (1d + Math.Pow(10d, -K * eval / 400d)));
+        return (float)(1d / (1d + Math.Pow(10d, -K * eval / 4d)));
     }
 
     private static float SigmoidDiff(float prediction)
     {
-        return 2.302585093f * K / 400f * (prediction * (1f - prediction));
+        return 2.302585093f * K / 4f * (prediction * (1f - prediction));
     }
 }

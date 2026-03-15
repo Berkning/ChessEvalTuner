@@ -124,8 +124,8 @@ public class MLEvaluation
         //TODO: Use the allPieceList array instead of calling GetPiecelist
 
         //SetPSQTFeaturesWhite(board.GetPieceList(Piece.King, 0), 64 * 0);
-        features[board.whiteKingSquare] = 1f - (phase / 100f);
-        features[board.whiteKingSquare + 384] = phase / 100f;
+        features[board.whiteKingSquare] += 1f - (phase / 100f);
+        features[board.whiteKingSquare + 384] += phase / 100f;
 
         SetPSQTFeaturesWhite(board.GetPieceList(Piece.Pawn, 0), 64 * 1);
         SetPSQTFeaturesWhite(board.GetPieceList(Piece.Knight, 0), 64 * 2);
@@ -135,8 +135,8 @@ public class MLEvaluation
 
 
         //SetPSQTFeaturesBlack(board.GetPieceList(Piece.King, 1), 64 * 0);
-        features[BoardHelper.FlipIndex(board.blackKingSquare)] = 1f - (phase / 100f);
-        features[BoardHelper.FlipIndex(board.blackKingSquare) + 384] = phase / 100f;
+        features[BoardHelper.FlipIndex(board.blackKingSquare)] -= 1f - (phase / 100f);
+        features[BoardHelper.FlipIndex(board.blackKingSquare) + 384] -= phase / 100f;
 
         SetPSQTFeaturesBlack(board.GetPieceList(Piece.Pawn, 1), 64 * 1);
         SetPSQTFeaturesBlack(board.GetPieceList(Piece.Knight, 1), 64 * 2);
@@ -150,9 +150,9 @@ public class MLEvaluation
     {
         for (int i = 0; i < list.Count; i++)
         {
-            features[list[i] + PSQTOffset] = 1f - (phase / 100f); //Activate middlegame PSQT at this square with intensity equal to how "much" we are in the middlegame
+            features[list[i] + PSQTOffset] += 1f - (phase / 100f); //Activate middlegame PSQT at this square with intensity equal to how "much" we are in the middlegame
 
-            features[list[i] + PSQTOffset + 384] = phase / 100f; //Activate endgame PSQT at this square with intensity equal to how "much" we are in the endgame 
+            features[list[i] + PSQTOffset + 384] += phase / 100f; //Activate endgame PSQT at this square with intensity equal to how "much" we are in the endgame 
         }
     }
 
@@ -164,9 +164,9 @@ public class MLEvaluation
             //TODO: Rename "flipindex" to "mirrorindex"
             int mirroredSquare = BoardHelper.FlipIndex(list[i]);
 
-            features[mirroredSquare + PSQTOffset] = 1f - (phase / 100f); //Activate middlegame PSQT at this square with intensity equal to how "much" we are in the middlegame
+            features[mirroredSquare + PSQTOffset] -= 1f - (phase / 100f); //Activate middlegame PSQT at this square with intensity equal to how "much" we are in the middlegame
 
-            features[mirroredSquare + PSQTOffset + 384] = phase / 100f; //Activate endgame PSQT at this square with intensity equal to how "much" we are in the endgame 
+            features[mirroredSquare + PSQTOffset + 384] -= phase / 100f; //Activate endgame PSQT at this square with intensity equal to how "much" we are in the endgame 
         }
     }
     #endregion
