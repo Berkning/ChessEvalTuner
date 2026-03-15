@@ -6,7 +6,7 @@ public static class Trainer
     private static float learningRate = 0.025f;
     private static float lambda = 0.00001f;
     private static float accumulatedLoss = 0f;
-    private const int BatchSize = 256;
+    private const int BatchSize = 1024;
 
     public static void BeginTraining()
     {
@@ -126,6 +126,48 @@ public static class Trainer
         }
 
         return errorSum / trainingData.Count;
+    }
+
+    public static void FindK(int iterations, float range)
+    {
+        K = range / 2f;
+
+        float BestAEE = GetAverageEvaluationError();
+        float BestK = K;
+
+        float direction = range / 4f;
+
+        for (int i = 0; i < iterations; i++)
+        {
+            K += direction;
+            float ForwardAEE = GetAverageEvaluationError();
+
+            K -= direction * 2f; //Go back twice so we are |direction| away from the starting point
+            float BackAEE = GetAverageEvaluationError();
+
+            if (BackAEE > BestAEE && ForwardAEE > BestAEE)
+            {
+                //K is set to what it was before, since that guess is still our best
+                K = BestK;
+            }
+            else if (BackAEE <= ForwardAEE) //If stepping backward gave better results
+            {
+                //Do nothing to K bc it is already at the best spot
+                BestK = K;
+                BestAEE = BackAEE;
+            }
+            else //If stepping forward gave better results
+            {
+                K += direction * 2f; //We stepped back previously, so we step two forward now
+                BestAEE = ForwardAEE;
+                BestK = K;
+            }
+
+            Console.WriteLine("K is " + BestK);
+            direction /= 1.5f;
+        }
+
+        Console.WriteLine("K is now: " + K);
     }
 
 

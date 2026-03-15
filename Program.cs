@@ -42,10 +42,10 @@ public static class Program
             case "evaluatepositions":
                 //StockfishInterface.EvaluateAll();
                 break;
-            case "GetAEE":
+            case "getAEE":
                 Console.WriteLine(Trainer.GetAverageEvaluationError());
                 break;
-            case "SetK":
+            case "setK":
                 Trainer.K = float.Parse(args[1]);
                 Console.WriteLine("K is now " + Trainer.K);
                 break;
@@ -54,6 +54,9 @@ public static class Program
                 break;
             case "begin":
                 Trainer.BeginTraining();
+                break;
+            case "findK":
+                Trainer.FindK(int.Parse(args[1]), float.Parse(args[2]));
                 break;
         }
     }
