@@ -1,10 +1,10 @@
 
 
-public static class Trainer
+public static class Trainer //TODO: Q-Search
 {
     public static List<Position> trainingData;
-    private static float learningRate = 0.025f;
-    private static float lambda = 0.00001f;
+    public static float learningRate = 0.01f;
+    public static float lambda = 0.00001f;
     private static float accumulatedLoss = 0f;
     private const int BatchSize = 1024;
 
@@ -164,7 +164,7 @@ public static class Trainer
             }
 
             Console.WriteLine("K is " + BestK);
-            direction /= 1.5f;
+            direction /= 1.9f;
         }
 
         Console.WriteLine("K is now: " + K);

@@ -53,10 +53,28 @@ public static class Program
                 ModelInterface.RecieveCommand(args);
                 break;
             case "begin":
-                Trainer.BeginTraining();
+                if (args.Length == 1) Trainer.BeginTraining();
+                else
+                {
+                    int iterations = int.Parse(args[1]);
+
+                    for (int i = 0; i < iterations; i++)
+                    {
+                        Trainer.BeginTraining();
+                        Console.WriteLine("Epoch #" + (i + 1) + " Done");
+                    }
+                }
                 break;
             case "findK":
                 Trainer.FindK(int.Parse(args[1]), float.Parse(args[2]));
+                break;
+            case "setLR":
+                Trainer.learningRate = float.Parse(args[1]);
+                Console.WriteLine("Learning Rate is now " + Trainer.learningRate);
+                break;
+            case "setLambda":
+                Trainer.lambda = float.Parse(args[1]);
+                Console.WriteLine("Lambda is now " + Trainer.lambda);
                 break;
         }
     }
