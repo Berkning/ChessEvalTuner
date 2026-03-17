@@ -17,10 +17,6 @@ public static class Trainer //TODO: Q-Search
         }
         else Console.WriteLine("Training data already present, skipping load");
 
-        Console.WriteLine("Filtering for checks across " + trainingData.Count + " positions...");
-        CheckFilter.FilterChecks(trainingData);
-        Console.WriteLine("Filtering Done. " + trainingData.Count + " positions remaining");
-
         Console.WriteLine("Shuffling data...");
         trainingData = trainingData.Shuffle().ToList();
 
@@ -132,12 +128,23 @@ public static class Trainer //TODO: Q-Search
 
     public static void FindK(int iterations, float range)
     {
+        if (trainingData == null || trainingData.Count == 0)
+        {
+            Console.WriteLine("Loading file...");
+            trainingData = SaveData.Load();
+        }
+
+        Console.WriteLine("Filtering for checks across " + trainingData.Count + " positions...");
+        CheckFilter.FilterChecks(trainingData);
+        Console.WriteLine("Filtering Done. " + trainingData.Count + " positions remaining");
+
         K = range / 2f;
 
         float BestAEE = GetAverageEvaluationError();
         float BestK = K;
 
         float direction = range / 4f;
+
 
         for (int i = 0; i < iterations; i++)
         {
