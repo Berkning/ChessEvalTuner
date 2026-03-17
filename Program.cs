@@ -31,6 +31,7 @@ public static class Program
                 break;
             case "load":
                 PositionPicker.positions = SaveData.Load();
+                Trainer.trainingData = PositionPicker.positions;
                 break;
             case "pickpositions":
                 //PositionPicker.Pick(PGNParser.games);
@@ -75,6 +76,9 @@ public static class Program
             case "setLambda":
                 Trainer.lambda = float.Parse(args[1]);
                 Console.WriteLine("Lambda is now " + Trainer.lambda);
+                break;
+            case "filterChecks":
+                CheckFilter.FilterChecks(Trainer.trainingData);
                 break;
         }
     }

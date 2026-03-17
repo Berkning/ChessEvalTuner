@@ -17,6 +17,10 @@ public static class Trainer //TODO: Q-Search
         }
         else Console.WriteLine("Training data already present, skipping load");
 
+        Console.WriteLine("Filtering for checks across " + trainingData.Count + " positions...");
+        CheckFilter.FilterChecks(trainingData);
+        Console.WriteLine("Filtering Done. " + trainingData.Count + " positions remaining");
+
         Console.WriteLine("Shuffling data...");
         trainingData = trainingData.Shuffle().ToList();
 
@@ -56,8 +60,6 @@ public static class Trainer //TODO: Q-Search
             }
 
             gradients[biasGradientIndex] += -(target - ourPrediction) * SigmoidDiff(ourPrediction);
-
-            //gradients[biasGradientIndex] += 2f * diff * dTanh * 1f; //TODO:
 
 
             if ((i + 1) % BatchSize == 0) //Because index starts at 0
