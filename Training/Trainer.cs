@@ -3,12 +3,14 @@
 public static class Trainer //TODO: Q-Search
 {
     public static List<Position> trainingData;
-    public static float learningRate = 0.01f;
+    public static float initialLearningRate = 0.01f;
+    private static float currentLearningRate = initialLearningRate;
+    public static float decayRate = 0.01f; //Learning rate decay rate
     public static float lambda = 0.00001f;
     private static float accumulatedLoss = 0f;
     private const int BatchSize = 1024;
 
-    public static void BeginTraining()
+    public static void BeginTraining(int epochs)
     {
         if (trainingData == null || trainingData.Count == 0)
         {
@@ -17,83 +19,91 @@ public static class Trainer //TODO: Q-Search
         }
         else Console.WriteLine("Training data already present, skipping load");
 
-        Console.WriteLine("Shuffling data...");
-        trainingData = trainingData.Shuffle().ToList();
-
-        //Console.WriteLine("Random data check: " + trainingData[47].stockfishEval);
-
-        //Console.WriteLine("Translating moves...");
-        //StockfishInterface.TranslateMoves(ref trainingData);
-
-
-        Console.WriteLine("Beginning training loop...");
-
-        float[] gradients = new float[MLEvaluation.weights.Length + 1];
-        int biasGradientIndex = MLEvaluation.weights.Length;
-
-        for (int i = 0; i < trainingData.Count; i++)
+        for (int e = 0; e < epochs; e++)
         {
-            float target = trainingData[i].result;
+            currentLearningRate = initialLearningRate / (1f + decayRate * e);
+            Console.WriteLine("Learning rate decayed to " + currentLearningRate);
 
-            ModelInterface.board = new Board(); //Just to be safe
-            ModelInterface.LoadPosition(("training fen " + trainingData[i].fen).Split(' ')); //Kinda janky
+            Console.WriteLine("Shuffling data...");
+            trainingData = trainingData.Shuffle().ToList();
 
-            float rawEval = ModelInterface.Evaluate();
-            float ourPrediction = Sigmoid(rawEval);
+            //Console.WriteLine("Random data check: " + trainingData[47].stockfishEval);
 
-            //Console.WriteLine($"rawEval {rawEval} target {target} ourEval {ourEval}");
+            //Console.WriteLine("Translating moves...");
+            //StockfishInterface.TranslateMoves(ref trainingData);
 
-            float diff = ourPrediction - target;
 
-            accumulatedLoss += diff * diff;
+            Console.WriteLine("Beginning training loop...");
 
-            //Accumulate gradients
-            for (int w = 0; w < MLEvaluation.weights.Length; w++)
+            float[] gradients = new float[MLEvaluation.weights.Length + 1];
+            int biasGradientIndex = MLEvaluation.weights.Length;
+
+            for (int i = 0; i < trainingData.Count; i++)
             {
-                //gradients[w] += 2f * diff * dTanh * MLEvaluation.features[w]; /// 4f;
+                float target = trainingData[i].result;
 
-                gradients[w] += -(target - ourPrediction) * SigmoidDiff(ourPrediction) * MLEvaluation.features[w];
-            }
+                ModelInterface.board = new Board(); //Just to be safe
+                ModelInterface.LoadPosition(("training fen " + trainingData[i].fen).Split(' ')); //Kinda janky
 
-            gradients[biasGradientIndex] += -(target - ourPrediction) * SigmoidDiff(ourPrediction);
+                float rawEval = ModelInterface.Evaluate();
+                float ourPrediction = Sigmoid(rawEval);
 
+                //Console.WriteLine($"rawEval {rawEval} target {target} ourEval {ourEval}");
 
-            if ((i + 1) % BatchSize == 0) //Because index starts at 0
-            {
-                //float norm = 0;
+                float diff = ourPrediction - target;
 
+                accumulatedLoss += diff * diff;
+
+                //Accumulate gradients
                 for (int w = 0; w < MLEvaluation.weights.Length; w++)
                 {
-                    gradients[w] /= BatchSize;
-                    //gradients[w] += 2f * lambda * MLEvaluation.weights[w]; //L2 Regularization
+                    //gradients[w] += 2f * diff * dTanh * MLEvaluation.features[w]; /// 4f;
 
-                    //gradients[w] = Math.Clamp(gradients[w], -1f, 1f); //Gradient clipping
+                    gradients[w] += -(target - ourPrediction) * SigmoidDiff(ourPrediction) * MLEvaluation.features[w];
                 }
 
-                gradients[biasGradientIndex] /= BatchSize;
+                gradients[biasGradientIndex] += -(target - ourPrediction) * SigmoidDiff(ourPrediction);
 
 
-                for (int w = 0; w < MLEvaluation.weights.Length; w++)
+                if ((i + 1) % BatchSize == 0) //Because index starts at 0
                 {
-                    MLEvaluation.weights[w] -= learningRate * gradients[w];
+                    //float norm = 0;
 
-                    //norm += gradients[w] * gradients[w];
-                    gradients[w] = 0;
+                    for (int w = 0; w < MLEvaluation.weights.Length; w++)
+                    {
+                        gradients[w] /= BatchSize;
+                        //gradients[w] += 2f * lambda * MLEvaluation.weights[w]; //L2 Regularization
+
+                        //gradients[w] = Math.Clamp(gradients[w], -1f, 1f); //Gradient clipping
+                    }
+
+                    gradients[biasGradientIndex] /= BatchSize;
+
+
+                    for (int w = 0; w < MLEvaluation.weights.Length; w++)
+                    {
+                        MLEvaluation.weights[w] -= currentLearningRate * gradients[w];
+
+                        //norm += gradients[w] * gradients[w];
+                        gradients[w] = 0;
+                    }
+
+                    MLEvaluation.bias -= currentLearningRate * gradients[biasGradientIndex];
+                    gradients[biasGradientIndex] = 0;
+
+                    //Console.WriteLine("Grad norm: " + Math.Sqrt(norm));
                 }
 
-                MLEvaluation.bias -= learningRate * gradients[biasGradientIndex];
-                gradients[biasGradientIndex] = 0;
 
-                //Console.WriteLine("Grad norm: " + Math.Sqrt(norm));
+                if (i % 10000 == 0)
+                {
+                    Console.WriteLine("CheckEval: " + rawEval);
+                    Console.WriteLine(i + "/" + trainingData.Count + " Loss: " + accumulatedLoss / 10000f);
+                    accumulatedLoss = 0f;
+                }
             }
 
-
-            if (i % 10000 == 0)
-            {
-                Console.WriteLine("CheckEval: " + rawEval);
-                Console.WriteLine(i + "/" + trainingData.Count + " Loss: " + accumulatedLoss / 10000f);
-                accumulatedLoss = 0f;
-            }
+            Console.WriteLine("Epoch #" + e + " finished");
         }
 
         Console.WriteLine("Training Done.");

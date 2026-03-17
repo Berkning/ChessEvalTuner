@@ -54,24 +54,24 @@ public static class Program
                 ModelInterface.RecieveCommand(args);
                 break;
             case "begin":
-                if (args.Length == 1) Trainer.BeginTraining();
+                if (args.Length == 1) Trainer.BeginTraining(1);
                 else
                 {
                     int iterations = int.Parse(args[1]);
 
-                    for (int i = 0; i < iterations; i++)
-                    {
-                        Trainer.BeginTraining();
-                        Console.WriteLine("Epoch #" + (i + 1) + " Done");
-                    }
+                    Trainer.BeginTraining(iterations);
                 }
                 break;
             case "findK":
                 Trainer.FindK(int.Parse(args[1]), float.Parse(args[2]));
                 break;
             case "setLR":
-                Trainer.learningRate = float.Parse(args[1]);
-                Console.WriteLine("Learning Rate is now " + Trainer.learningRate);
+                Trainer.initialLearningRate = float.Parse(args[1]);
+                Console.WriteLine("Learning Rate is now " + Trainer.initialLearningRate);
+                break;
+            case "setDecay":
+                Trainer.decayRate = float.Parse(args[1]);
+                Console.WriteLine("Decay Rate is now " + Trainer.decayRate);
                 break;
             case "setLambda":
                 Trainer.lambda = float.Parse(args[1]);
