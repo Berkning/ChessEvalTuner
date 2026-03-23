@@ -52,17 +52,18 @@ public static class Trainer //TODO: Q-Search
 
                 float diff = ourPrediction - target;
 
-                accumulatedLoss += diff * diff;
+                accumulatedLoss += Loss(ourPrediction, target);
 
                 //Accumulate gradients
                 for (int w = 0; w < MLEvaluation.weights.Length; w++)
                 {
                     //gradients[w] += 2f * diff * dTanh * MLEvaluation.features[w]; /// 4f;
 
-                    gradients[w] += -(target - ourPrediction) * SigmoidDiff(ourPrediction) * MLEvaluation.features[w];
+                    //gradients[w] += -(target - ourPrediction) * SigmoidDiff(ourPrediction) * MLEvaluation.features[w];
+                    gradients[w] += K * (ourPrediction - target) * MLEvaluation.features[w];
                 }
 
-                gradients[biasGradientIndex] += -(target - ourPrediction) * SigmoidDiff(ourPrediction);
+                gradients[biasGradientIndex] += K * (ourPrediction - target);
 
 
                 if ((i + 1) % BatchSize == 0) //Because index starts at 0
@@ -128,7 +129,7 @@ public static class Trainer //TODO: Q-Search
 
             float ourPrediction = Sigmoid(rawEval);
 
-            float error = (float)Math.Pow(trainingData[i].result - ourPrediction, 2d);
+            float error = Loss(ourPrediction, trainingData[i].result);
 
             errorSum += error;
         }
@@ -194,11 +195,22 @@ public static class Trainer //TODO: Q-Search
 
     private static float Sigmoid(float eval)
     {
-        return (float)(1d / (1d + Math.Pow(10d, -K * eval / 4d)));
+        float result = (float)(1d / (1d + Math.Pow(Math.E, -K * eval / 4d * Math.Log(10))));
+        if (result > 1f) result = 1f;
+
+        return result;
     }
 
-    private static float SigmoidDiff(float prediction)
+    private static float Loss(float prediction, float target)
     {
-        return 2.302585093f * K / 4f * (prediction * (1f - prediction));
+        if (prediction >= 1f && target >= 1f)
+        {
+            Console.WriteLine("Would have been nan?: " + -(float)(target * Math.Log(prediction) + (1d - target) * Math.Log(1d - prediction)));
+            return 0f;
+        }
+
+        if (prediction > 1f || prediction < 0f) Console.WriteLine("ERROR: prediction = " + prediction);
+        if (float.IsNaN(-(float)(target * Math.Log(prediction) + (1d - target) * Math.Log(1d - prediction)))) Console.WriteLine("Nan: " + prediction + "   " + target);
+        return -(float)(target * Math.Log(prediction) + (1d - target) * Math.Log(1d - prediction));
     }
 }
