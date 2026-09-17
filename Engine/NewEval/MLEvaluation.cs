@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 public class MLEvaluation
 {
     //TODO: Mobility? Rooks on open files? Mopup score? 
-    public static readonly double[] weights = new double[768 + 6 + 9 + 1]; //TODO: We can easily eliminate bounds checks when using these arrays
+    public static readonly double[] weights = new double[768 + 6 + 9 + 7]; //TODO: We can easily eliminate bounds checks when using these arrays
     public static double[] features = new double[weights.Length]; //TODO: We can easily eliminate bounds checks when using these arrays
     public static double bias;
 
@@ -322,7 +322,7 @@ public class MLEvaluation
 
     #region King Safety
     //TODO: Add way more features
-    //1 missing pawns on top of king difference = 1 feature
+    //1 missing pawns on top of king difference + 1 hole in kings pawnshield difference + 1 complete open file above king difference + 4 pawn storm rank differences above king = 7 feature
     private void CalculateKingSafety(Board board)
     {
         //TODO: Calculate in PrecomputedData
@@ -347,6 +347,85 @@ public class MLEvaluation
         if (!BitBoardHelper.ContainsSquare(board.GetPieceList(Piece.Pawn, 1).bitboard, board.blackKingSquare + PrecomputedData.Down)) missingPawnDefenseDifference--;
 
         features[783] = missingPawnDefenseDifference * (1f - phase / 100f);
+
+
+
+
+
+
+        int missingPawnShieldDifference = 0;
+
+        kingFile = BoardHelper.IndexToFile(board.whiteKingSquare);
+
+        if (kingFile > 0 && !(BitBoardHelper.ContainsSquare(board.GetPieceList(Piece.Pawn, 0).bitboard, board.whiteKingSquare + PrecomputedData.UpLeft) || BitBoardHelper.ContainsSquare(board.GetPieceList(Piece.Pawn, 0).bitboard, board.whiteKingSquare + PrecomputedData.UpLeft + PrecomputedData.Up))) missingPawnShieldDifference++;
+
+        if (kingFile < 7 && !(BitBoardHelper.ContainsSquare(board.GetPieceList(Piece.Pawn, 0).bitboard, board.whiteKingSquare + PrecomputedData.UpRight) || BitBoardHelper.ContainsSquare(board.GetPieceList(Piece.Pawn, 0).bitboard, board.whiteKingSquare + PrecomputedData.UpRight + PrecomputedData.Up))) missingPawnShieldDifference++;
+
+        if (!(BitBoardHelper.ContainsSquare(board.GetPieceList(Piece.Pawn, 0).bitboard, board.whiteKingSquare + PrecomputedData.Up) || BitBoardHelper.ContainsSquare(board.GetPieceList(Piece.Pawn, 0).bitboard, board.whiteKingSquare + PrecomputedData.Up + PrecomputedData.Up))) missingPawnShieldDifference++;
+
+
+
+        kingFile = BoardHelper.IndexToFile(board.blackKingSquare);
+
+        if (kingFile > 0 && !(BitBoardHelper.ContainsSquare(board.GetPieceList(Piece.Pawn, 1).bitboard, board.blackKingSquare + PrecomputedData.DownLeft) || BitBoardHelper.ContainsSquare(board.GetPieceList(Piece.Pawn, 1).bitboard, board.blackKingSquare + PrecomputedData.DownLeft + PrecomputedData.Down))) missingPawnShieldDifference--;
+
+        if (kingFile < 7 && !(BitBoardHelper.ContainsSquare(board.GetPieceList(Piece.Pawn, 1).bitboard, board.blackKingSquare + PrecomputedData.DownRight) || BitBoardHelper.ContainsSquare(board.GetPieceList(Piece.Pawn, 1).bitboard, board.blackKingSquare + PrecomputedData.DownRight + PrecomputedData.Down))) missingPawnShieldDifference--;
+
+        if (!(BitBoardHelper.ContainsSquare(board.GetPieceList(Piece.Pawn, 1).bitboard, board.blackKingSquare + PrecomputedData.Down) || BitBoardHelper.ContainsSquare(board.GetPieceList(Piece.Pawn, 1).bitboard, board.blackKingSquare + PrecomputedData.Down + PrecomputedData.Down))) missingPawnShieldDifference--;
+
+        features[784] = missingPawnShieldDifference * (1f - phase / 100f);
+
+
+
+
+
+        int openFileAboveKingDifference = 0;
+
+        kingFile = BoardHelper.IndexToFile(board.whiteKingSquare);
+
+        if (kingFile > 0 && ((PrecomputedData.fileMasks[kingFile - 1] & board.GetPieceList(Piece.Pawn, 0).bitboard) == 0)) openFileAboveKingDifference++;
+
+        if (kingFile < 7 && ((PrecomputedData.fileMasks[kingFile + 1] & board.GetPieceList(Piece.Pawn, 0).bitboard) == 0)) openFileAboveKingDifference++;
+
+        if ((PrecomputedData.fileMasks[kingFile] & board.GetPieceList(Piece.Pawn, 0).bitboard) == 0) openFileAboveKingDifference++;
+
+
+
+        kingFile = BoardHelper.IndexToFile(board.blackKingSquare);
+
+        if (kingFile > 0 && ((PrecomputedData.fileMasks[kingFile - 1] & board.GetPieceList(Piece.Pawn, 1).bitboard) == 0)) openFileAboveKingDifference--;
+
+        if (kingFile < 7 && ((PrecomputedData.fileMasks[kingFile + 1] & board.GetPieceList(Piece.Pawn, 1).bitboard) == 0)) openFileAboveKingDifference--;
+
+        if ((PrecomputedData.fileMasks[kingFile] & board.GetPieceList(Piece.Pawn, 1).bitboard) == 0) openFileAboveKingDifference--;
+
+        features[785] = openFileAboveKingDifference * (1f - phase / 100f);
+
+
+
+
+
+        ulong whitePawns = board.GetPieceList(Piece.Pawn, 0).bitboard;
+        ulong blackPawns = board.GetPieceList(Piece.Pawn, 1).bitboard;
+
+        int whiteKingFile = BoardHelper.IndexToFile(board.whiteKingSquare);
+        int blackKingFile = BoardHelper.IndexToFile(board.blackKingSquare);
+
+        for (int i = 0; i < 4; i++)
+        {
+            int pawnStormRankDifference = 0;
+
+            if (whiteKingFile > 0 && BitBoardHelper.ContainsSquare(blackPawns, board.whiteKingSquare + PrecomputedData.UpLeft + PrecomputedData.Up * i)) pawnStormRankDifference++;
+            if (whiteKingFile < 7 && BitBoardHelper.ContainsSquare(blackPawns, board.whiteKingSquare + PrecomputedData.UpRight + PrecomputedData.Up * i)) pawnStormRankDifference++;
+            if (BitBoardHelper.ContainsSquare(blackPawns, board.whiteKingSquare + PrecomputedData.Up + PrecomputedData.Up * i)) pawnStormRankDifference++;
+
+            if (blackKingFile > 0 && BitBoardHelper.ContainsSquare(whitePawns, board.blackKingSquare + PrecomputedData.DownLeft + PrecomputedData.Down * i)) pawnStormRankDifference--;
+            if (blackKingFile < 7 && BitBoardHelper.ContainsSquare(whitePawns, board.blackKingSquare + PrecomputedData.DownRight + PrecomputedData.Down * i)) pawnStormRankDifference--;
+            if (BitBoardHelper.ContainsSquare(whitePawns, board.blackKingSquare + PrecomputedData.Down + PrecomputedData.Down * i)) pawnStormRankDifference--;
+
+
+            features[786 + i] = pawnStormRankDifference * (1f - phase / 100f);
+        }
     }
     #endregion
 
