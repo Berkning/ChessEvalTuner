@@ -47,7 +47,7 @@ public static class Program
                 Console.WriteLine(Trainer.GetAverageEvaluationError());
                 break;
             case "setK":
-                Trainer.K = float.Parse(args[1]);
+                Trainer.K = double.Parse(args[1]);
                 Console.WriteLine("K is now " + Trainer.K);
                 break;
             case "training":
@@ -63,18 +63,18 @@ public static class Program
                 }
                 break;
             case "findK":
-                Trainer.FindK(int.Parse(args[1]), float.Parse(args[2]));
+                Trainer.FindK(int.Parse(args[1]), double.Parse(args[2]));
                 break;
             case "setLR":
-                Trainer.initialLearningRate = float.Parse(args[1]);
+                Trainer.initialLearningRate = double.Parse(args[1]);
                 Console.WriteLine("Learning Rate is now " + Trainer.initialLearningRate);
                 break;
             case "setDecay":
-                Trainer.decayRate = float.Parse(args[1]);
+                Trainer.decayRate = double.Parse(args[1]);
                 Console.WriteLine("Decay Rate is now " + Trainer.decayRate);
                 break;
             case "setLambda":
-                Trainer.lambda = float.Parse(args[1]);
+                Trainer.lambda = double.Parse(args[1]);
                 Console.WriteLine("Lambda is now " + Trainer.lambda);
                 break;
             case "filterChecks":

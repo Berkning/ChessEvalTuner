@@ -18,7 +18,7 @@ public static class ModelInterface
                 }
                 break;
             case "randomize":
-                float multiplier = float.Parse(args[2]);
+                double multiplier = double.Parse(args[2]);
                 Console.WriteLine("Randomizing weights from " + (-multiplier) + " to " + multiplier);
 
                 for (int i = 0; i < MLEvaluation.weights.Length; i++)
@@ -40,12 +40,12 @@ public static class ModelInterface
                 Console.WriteLine(FenUtility.GetCurrentFen(board));
                 break;
             case "biggest":
-                float biggest = -1f;
+                double biggest = -1f;
                 int index = -1;
 
                 for (int i = 0; i < MLEvaluation.weights.Length; i++)
                 {
-                    float size = Math.Abs(MLEvaluation.weights[i]);
+                    double size = Math.Abs(MLEvaluation.weights[i]);
                     if (size > biggest)
                     {
                         biggest = size;
@@ -58,7 +58,7 @@ public static class ModelInterface
         }
     }
 
-    public static float Evaluate()
+    public static double Evaluate()
     {
         return evaluation.GetEval(board);
     }

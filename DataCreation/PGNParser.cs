@@ -43,7 +43,7 @@ public static class PGNParser
 
                 string fen = parts[0];
 
-                float result = -1f;
+                double result = -1f;
 
                 if (parts[1].Contains("1-0")) result = 1f;
                 else if (parts[1].Contains("1/2-1/2")) result = 0.5f;

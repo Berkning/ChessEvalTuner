@@ -4,11 +4,11 @@ using Newtonsoft.Json;
 public class MLEvaluation
 {
     //TODO: Mobility? Rooks on open files? Mopup score? 
-    public static readonly float[] weights = new float[768 + 6 + 9 + 1]; //TODO: We can easily eliminate bounds checks when using these arrays
-    public static float[] features = new float[weights.Length]; //TODO: We can easily eliminate bounds checks when using these arrays
-    public static float bias;
+    public static readonly double[] weights = new double[768 + 6 + 9 + 1]; //TODO: We can easily eliminate bounds checks when using these arrays
+    public static double[] features = new double[weights.Length]; //TODO: We can easily eliminate bounds checks when using these arrays
+    public static double bias;
 
-    public float GetEval(Board board)
+    public double GetEval(Board board)
     {
         for (int i = 0; i < weights.Length; i++)
         {
@@ -21,7 +21,7 @@ public class MLEvaluation
 
 
 
-        float result = bias;
+        double result = bias;
 
         for (int i = 0; i < weights.Length; i++)
         {
@@ -66,7 +66,7 @@ public class MLEvaluation
 
     public static void LogDataAsInt(int shift)
     {
-        float multiplier = (float)Math.Pow(2f, shift);
+        double multiplier = (double)Math.Pow(2f, shift);
 
         int[] intWeights = new int[weights.Length];
         //int[] intFeatures = new int[weights.Length];
@@ -86,13 +86,13 @@ public class MLEvaluation
 
     #region Phase
 
-    private const float KnightPhase = 1f;
-    private const float BishopPhase = 1f;
-    private const float RookPhase = 2f;
-    private const float QueenPhase = 4f;
+    private const double KnightPhase = 1f;
+    private const double BishopPhase = 1f;
+    private const double RookPhase = 2f;
+    private const double QueenPhase = 4f;
 
-    private const float MaxPhase = KnightPhase * 4f + BishopPhase * 4f + RookPhase * 4f + QueenPhase * 2f;
-    private float phase; //Phase is between 0 (MG) and 100 (EG)
+    private const double MaxPhase = KnightPhase * 4f + BishopPhase * 4f + RookPhase * 4f + QueenPhase * 2f;
+    private double phase; //Phase is between 0 (MG) and 100 (EG)
 
     private void CalculatePhase(Board board)
     {
@@ -184,8 +184,8 @@ public class MLEvaluation
         features[771] = board.GetPieceList(Piece.Rook, 0).Count - board.GetPieceList(Piece.Rook, 1).Count;
         features[772] = board.GetPieceList(Piece.Queen, 0).Count - board.GetPieceList(Piece.Queen, 1).Count;
 
-        float whiteBishopPair = board.GetPieceList(Piece.Bishop, 0).Count > 1 ? 1f : 0f; //TODO: Obv don't call this again
-        float blackBishopPair = board.GetPieceList(Piece.Bishop, 1).Count > 1 ? 1f : 0f; //TODO: Obv don't call this again
+        double whiteBishopPair = board.GetPieceList(Piece.Bishop, 0).Count > 1 ? 1f : 0f; //TODO: Obv don't call this again
+        double blackBishopPair = board.GetPieceList(Piece.Bishop, 1).Count > 1 ? 1f : 0f; //TODO: Obv don't call this again
 
         features[773] = whiteBishopPair - blackBishopPair;
     }

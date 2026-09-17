@@ -3,11 +3,11 @@
 public static class Trainer //TODO: Q-Search
 {
     public static List<Position> trainingData;
-    public static float initialLearningRate = 0.01f;
-    private static float currentLearningRate = initialLearningRate;
-    public static float decayRate = 0.01f; //Learning rate decay rate
-    public static float lambda = 0.00001f;
-    private static float accumulatedLoss = 0f;
+    public static double initialLearningRate = 0.01f;
+    private static double currentLearningRate = initialLearningRate;
+    public static double decayRate = 0.01f; //Learning rate decay rate
+    public static double lambda = 0.00001f;
+    private static double accumulatedLoss = 0f;
     private const int BatchSize = 1024;
 
     public static void BeginTraining(int epochs)
@@ -35,22 +35,22 @@ public static class Trainer //TODO: Q-Search
 
             Console.WriteLine("Beginning training loop...");
 
-            float[] gradients = new float[MLEvaluation.weights.Length + 1];
+            double[] gradients = new double[MLEvaluation.weights.Length + 1];
             int biasGradientIndex = MLEvaluation.weights.Length;
 
             for (int i = 0; i < trainingData.Count; i++)
             {
-                float target = trainingData[i].result;
+                double target = trainingData[i].result;
 
                 ModelInterface.board = new Board(); //Just to be safe
                 ModelInterface.LoadPosition(("training fen " + trainingData[i].fen).Split(' ')); //Kinda janky
 
-                float rawEval = ModelInterface.Evaluate();
-                float ourPrediction = Sigmoid(rawEval);
+                double rawEval = ModelInterface.Evaluate();
+                double ourPrediction = Sigmoid(rawEval);
 
                 //Console.WriteLine($"rawEval {rawEval} target {target} ourEval {ourEval}");
 
-                float diff = ourPrediction - target;
+                double diff = ourPrediction - target;
 
                 accumulatedLoss += Loss(ourPrediction, target);
 
@@ -68,7 +68,7 @@ public static class Trainer //TODO: Q-Search
 
                 if ((i + 1) % BatchSize == 0) //Because index starts at 0
                 {
-                    //float norm = 0;
+                    //double norm = 0;
 
                     for (int w = 0; w < MLEvaluation.weights.Length; w++)
                     {
@@ -110,7 +110,7 @@ public static class Trainer //TODO: Q-Search
         Console.WriteLine("Training Done.");
     }
 
-    public static float GetAverageEvaluationError() //Used for tuning K for a specific dataset
+    public static double GetAverageEvaluationError() //Used for tuning K for a specific dataset
     {
         if (trainingData == null || trainingData.Count == 0)
         {
@@ -118,18 +118,18 @@ public static class Trainer //TODO: Q-Search
             trainingData = SaveData.Load();
         }
 
-        float errorSum = 0f;
+        double errorSum = 0f;
 
         for (int i = 0; i < trainingData.Count; i++)
         {
             ModelInterface.board = new Board(); //Just to be safe
             ModelInterface.LoadPosition(("training fen " + trainingData[i].fen).Split(' '));
 
-            float rawEval = ModelInterface.Evaluate();
+            double rawEval = ModelInterface.Evaluate();
 
-            float ourPrediction = Sigmoid(rawEval);
+            double ourPrediction = Sigmoid(rawEval);
 
-            float error = Loss(ourPrediction, trainingData[i].result);
+            double error = Loss(ourPrediction, trainingData[i].result);
 
             errorSum += error;
         }
@@ -137,7 +137,7 @@ public static class Trainer //TODO: Q-Search
         return errorSum / trainingData.Count;
     }
 
-    public static void FindK(int iterations, float range)
+    public static void FindK(int iterations, double range)
     {
         if (trainingData == null || trainingData.Count == 0)
         {
@@ -151,19 +151,19 @@ public static class Trainer //TODO: Q-Search
 
         K = range / 2f;
 
-        float BestAEE = GetAverageEvaluationError();
-        float BestK = K;
+        double BestAEE = GetAverageEvaluationError();
+        double BestK = K;
 
-        float direction = range / 4f;
+        double direction = range / 4f;
 
 
         for (int i = 0; i < iterations; i++)
         {
             K += direction;
-            float ForwardAEE = GetAverageEvaluationError();
+            double ForwardAEE = GetAverageEvaluationError();
 
             K -= direction * 2f; //Go back twice so we are |direction| away from the starting point
-            float BackAEE = GetAverageEvaluationError();
+            double BackAEE = GetAverageEvaluationError();
 
             if (BackAEE > BestAEE && ForwardAEE > BestAEE)
             {
@@ -191,26 +191,27 @@ public static class Trainer //TODO: Q-Search
     }
 
 
-    public static float K = 1f;
+    public static double K = 1f;
 
-    private static float Sigmoid(float eval)
+    private static double Sigmoid(double eval)
     {
-        float result = (float)(1d / (1d + Math.Pow(Math.E, -K * eval / 4d * Math.Log(10))));
+        double result = (double)(1d / (1d + Math.Pow(Math.E, -K * eval / 4d * Math.Log(10))));
         if (result > 1f) result = 1f;
 
         return result;
     }
 
-    private static float Loss(float prediction, float target)
+    private static double Loss(double prediction, double target)
     {
         if (prediction >= 1f && target >= 1f)
         {
-            Console.WriteLine("Would have been nan?: " + -(float)(target * Math.Log(prediction) + (1d - target) * Math.Log(1d - prediction)));
+            Console.WriteLine("Would have been nan?: " + -(double)(target * Math.Log(prediction) + (1d - target) * Math.Log(1d - prediction)));
+            Console.WriteLine("Prediction: " + prediction + " : Target: " + target);
             return 0f;
         }
 
         if (prediction > 1f || prediction < 0f) Console.WriteLine("ERROR: prediction = " + prediction);
-        if (float.IsNaN(-(float)(target * Math.Log(prediction) + (1d - target) * Math.Log(1d - prediction)))) Console.WriteLine("Nan: " + prediction + "   " + target);
-        return -(float)(target * Math.Log(prediction) + (1d - target) * Math.Log(1d - prediction));
+        if (double.IsNaN(-(double)(target * Math.Log(prediction) + (1d - target) * Math.Log(1d - prediction)))) Console.WriteLine("Nan: " + prediction + "   " + target);
+        return -(double)(target * Math.Log(prediction) + (1d - target) * Math.Log(1d - prediction));
     }
 }

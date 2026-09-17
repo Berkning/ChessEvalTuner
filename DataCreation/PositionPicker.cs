@@ -61,9 +61,9 @@ public static class PositionPicker
 public class Position
 {
     public string fen;
-    public float result; //0 = black win, 0.5 = draw, 1 = white win
+    public double result; //0 = black win, 0.5 = draw, 1 = white win
 
-    public Position(string _fen, float _result)
+    public Position(string _fen, double _result)
     {
         fen = _fen;
         result = _result;

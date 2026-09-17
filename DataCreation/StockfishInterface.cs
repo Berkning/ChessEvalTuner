@@ -154,7 +154,7 @@ using System.Diagnostics;
                     }
                     else
                     {
-                        float eval = Eval(position);
+                        double eval = Eval(position);
 
                         evaluatedPositions.Add(new Position(position.startFen, position.moves, eval));
                     }
@@ -177,7 +177,7 @@ using System.Diagnostics;
             Console.WriteLine("bench completed");
         }
 
-        private float Eval(Position position)
+        private double Eval(Position position)
         {
             stockfish.StandardInput.WriteLine("setoption Clear Hash");
 
@@ -196,13 +196,13 @@ using System.Diagnostics;
             stockfish.StandardInput.WriteLine("go nodes " + NodeCap);
 
             string o = "";
-            float eval = -6969f;
+            double eval = -6969f;
 
             while (!o.Contains("bestmove"))
             {
                 if (o.Contains("mate"))
                 {
-                    eval = float.MaxValue;
+                    eval = double.MaxValue;
                     stockfish.StandardInput.WriteLine("stop"); //If stockfish sees a forced mate we can exit early and not waste more time on evaluating
                 }
                 else
@@ -216,11 +216,11 @@ using System.Diagnostics;
             return eval;
         }
 
-        private float ParseEval(string log)
+        private double ParseEval(string log)
         {
             int cpIndex = log.IndexOf("cp");
 
-            if (cpIndex == -1) return float.MaxValue; //Position is mate
+            if (cpIndex == -1) return double.MaxValue; //Position is mate
 
             string s = "";
 
@@ -231,10 +231,10 @@ using System.Diagnostics;
                 s += log[i];
             }
 
-            return float.Parse(s) / 100f;
+            return double.Parse(s) / 100f;
         }
 
-        // public float GetEval(string _fen, string _moves)
+        // public double GetEval(string _fen, string _moves)
         // {
         //     fen = _fen;
         //     moves = _moves;
@@ -242,7 +242,7 @@ using System.Diagnostics;
         //     Thread thread = new Thread(RunStockfish)
         //     }
 
-        // private float RunStockfish()
+        // private double RunStockfish()
         // {
 
         // }

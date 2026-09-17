@@ -173,12 +173,12 @@ public class Positioning //TODOne: endgame tables //TODO: Combine with evaluatio
     }
 
 
-    private static int Blend(int early, int late, float endgameMultiplier)
+    private static int Blend(int early, int late, double endgameMultiplier)
     {
         return (int)Math.Round(early + (late - early) * endgameMultiplier);
     }
 
-    private static int Blend(int early, int middle, int late, float gameStage)
+    private static int Blend(int early, int middle, int late, double gameStage)
     {
         return int.MaxValue;
     }

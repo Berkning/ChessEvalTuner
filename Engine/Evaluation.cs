@@ -20,9 +20,9 @@ public class Evaluation
     private int whiteMaterialValue;
     private int blackMaterialValue;
 
-    public float gameStage;
-    public float endgameMultiplier;
-    //public static float earlygameMultiplier;
+    public double gameStage;
+    public double endgameMultiplier;
+    //public static double earlygameMultiplier;
 
     //public static ulong darkPawnBoard;
     //public static ulong lightPawnBoard;
@@ -123,7 +123,7 @@ public class Evaluation
         //         ulong supportingPawnBoard = PrecomputedData.passedPawnMasks[square + enemyColorBit * 64] & (~PrecomputedData.fileMasks[file]) & friendlyPawnBoard; //Looks at pawns beside but not directly behind this one
         //         int supporters = BitBoardHelper.BitCount(supportingPawnBoard);
 
-        //         score += (int)((PassedPawnValue + supporters * PassedPawnConnectionValue) * endgameMultiplier); //TODO: Think about maybe having an int version of endgamemultiplier bc were using it in a few spots and seems quite inefficient to keep casting/rounding - Compiler converts all the constants here to floats so the cast is really the only thing to impact performance (i imagine)
+        //         score += (int)((PassedPawnValue + supporters * PassedPawnConnectionValue) * endgameMultiplier); //TODO: Think about maybe having an int version of endgamemultiplier bc were using it in a few spots and seems quite inefficient to keep casting/rounding - Compiler converts all the constants here to doubles so the cast is really the only thing to impact performance (i imagine)
         //     }
         // }
 
@@ -156,9 +156,9 @@ public class Evaluation
         totalMaterialWithoutPawns = whiteNonPawn + blackNonPawn;
     }
 
-    private float CalculateGameStage()
+    private double CalculateGameStage()
     {
-        float material = totalMaterialWithoutPawns / 100f + 7.5f;
+        double material = totalMaterialWithoutPawns / 100f + 7.5f;
         if (material < 13.3) return 2f;
         //stage = -0.0006f * material * material + 0.0091f * material + 2;
         //stage = -0.035f * material + 2.645f;
