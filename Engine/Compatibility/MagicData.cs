@@ -93,13 +93,13 @@ public static class MagicData
 
     #region PEXT
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ulong GetRookBoardPEXT(ulong allPieces, int square) //TODO: Move benchmark from HardwareCapabilites.cs into this class to avoid having this public
+    private static ulong GetRookBoardPEXT(ulong allPieces, int square) //TODO: Move benchmark from HardwareCapabilites.cs into this class to avoid having this public
     {
         return rookPEXTMoveBitboards[square][Bmi2.X64.ParallelBitExtract(allPieces, rookMasks[square])];
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ulong GetBishopBoardPEXT(ulong allPieces, int square) //TODO: Move benchmark from HardwareCapabilites.cs into this class to avoid having this public
+    private static ulong GetBishopBoardPEXT(ulong allPieces, int square) //TODO: Move benchmark from HardwareCapabilites.cs into this class to avoid having this public
     {
         return bishopPEXTMoveBitboards[square][Bmi2.X64.ParallelBitExtract(allPieces, bishopMasks[square])];
     }
@@ -107,7 +107,7 @@ public static class MagicData
 
     #region Magic Bitboards
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ulong GetRookBoardMagic(ulong allPieces, int square) //TODO: Move benchmark from HardwareCapabilites.cs into this class to avoid having this public
+    private static ulong GetRookBoardMagic(ulong allPieces, int square) //TODO: Move benchmark from HardwareCapabilites.cs into this class to avoid having this public
     {
         ulong blockers = rookMasks[square] & allPieces;
         ulong index = (blockers * rookMagics[square]) >> rookShifts[square];
@@ -116,7 +116,7 @@ public static class MagicData
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ulong GetBishopBoardMagic(ulong allPieces, int square) //TODO: Move benchmark from HardwareCapabilites.cs into this class to avoid having this public
+    private static ulong GetBishopBoardMagic(ulong allPieces, int square) //TODO: Move benchmark from HardwareCapabilites.cs into this class to avoid having this public
     {
         ulong blockers = bishopMasks[square] & allPieces;
         ulong index = (blockers * bishopMagics[square]) >> bishopShifts[square];

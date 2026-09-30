@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 public class MLEvaluation
 {
     //TODO: Mobility? Rooks on open files? Mopup score? 
-    public static readonly double[] weights = new double[768 + 6 + 9 + 7]; //TODO: We can easily eliminate bounds checks when using these arrays
+    public static readonly double[] weights = new double[768 + 6 + 9 + 7 + 6]; //TODO: We can easily eliminate bounds checks when using these arrays
     public static double[] features = new double[weights.Length]; //TODO: We can easily eliminate bounds checks when using these arrays
     public static double bias;
 
@@ -45,6 +45,8 @@ public class MLEvaluation
         CalculatePawnStructure(board);
         //LogData();
         CalculateKingSafety(board);
+
+        CalculateMobility(board);
     }
 
     public static void InitializeWeights()
@@ -92,7 +94,7 @@ public class MLEvaluation
     private const double QueenPhase = 4f;
 
     private const double MaxPhase = KnightPhase * 4f + BishopPhase * 4f + RookPhase * 4f + QueenPhase * 2f;
-    private double phase; //Phase is between 0 (MG) and 100 (EG)
+    private double phase; //Phase is between 0 (MG) and 100 (EwhiteBishopListG)
 
     private void CalculatePhase(Board board)
     {
@@ -346,7 +348,7 @@ public class MLEvaluation
 
         if (!BitBoardHelper.ContainsSquare(board.GetPieceList(Piece.Pawn, 1).bitboard, board.blackKingSquare + PrecomputedData.Down)) missingPawnDefenseDifference--;
 
-        features[783] = missingPawnDefenseDifference * (1f - phase / 100f);
+        features[783] = missingPawnDefenseDifference * (1f - phase / 100f); //TODO: Try () around the division
 
 
 
@@ -373,7 +375,7 @@ public class MLEvaluation
 
         if (!(BitBoardHelper.ContainsSquare(board.GetPieceList(Piece.Pawn, 1).bitboard, board.blackKingSquare + PrecomputedData.Down) || BitBoardHelper.ContainsSquare(board.GetPieceList(Piece.Pawn, 1).bitboard, board.blackKingSquare + PrecomputedData.Down + PrecomputedData.Down))) missingPawnShieldDifference--;
 
-        features[784] = missingPawnShieldDifference * (1f - phase / 100f);
+        features[784] = missingPawnShieldDifference * (1f - phase / 100f); //TODO: Try () around the division
 
 
 
@@ -399,7 +401,7 @@ public class MLEvaluation
 
         if ((PrecomputedData.fileMasks[kingFile] & board.GetPieceList(Piece.Pawn, 1).bitboard) == 0) openFileAboveKingDifference--;
 
-        features[785] = openFileAboveKingDifference * (1f - phase / 100f);
+        features[785] = openFileAboveKingDifference * (1f - phase / 100f); //TODO: Try () around the division
 
 
 
@@ -424,9 +426,86 @@ public class MLEvaluation
             if (BitBoardHelper.ContainsSquare(whitePawns, board.blackKingSquare + PrecomputedData.Down + PrecomputedData.Down * i)) pawnStormRankDifference--;
 
 
-            features[786 + i] = pawnStormRankDifference * (1f - phase / 100f);
+            features[786 + i] = pawnStormRankDifference * (1f - phase / 100f); //TODO: Try () around the division
         }
     }
+    #endregion
+
+
+
+    #region Mobility
+
+    //Mobility for 3(*2) piece types in both game phases = 6 features
+    private void CalculateMobility(Board board)
+    {
+        PieceList whiteBishopList = board.GetPieceList(Piece.Bishop, 0);
+        PieceList blackBishopList = board.GetPieceList(Piece.Bishop, 1);
+        PieceList whiteRookList = board.GetPieceList(Piece.Rook, 0);
+        PieceList blackRookList = board.GetPieceList(Piece.Rook, 1);
+        PieceList whiteQueenList = board.GetPieceList(Piece.Queen, 0);
+        PieceList blackQueenList = board.GetPieceList(Piece.Queen, 1);
+
+
+        ulong otherPieces = board.GetPieceList(Piece.Pawn, 0).bitboard | board.GetPieceList(Piece.Knight, 0).bitboard | board.GetPieceList(Piece.Pawn, 1).bitboard | board.GetPieceList(Piece.Knight, 1).bitboard;
+
+        ulong allPiecesNoKings = whiteBishopList.bitboard | blackBishopList.bitboard | whiteRookList.bitboard | blackRookList.bitboard | whiteQueenList.bitboard | blackQueenList.bitboard | otherPieces;
+
+        //We exclude the opponent king bc he can't be on check rays - will be irrelevant when we account for checks in quiescence
+        ulong whiteAllPieces = allPiecesNoKings | (1UL << board.whiteKingSquare);
+        ulong blackAllPieces = allPiecesNoKings | (1UL << board.blackKingSquare);
+
+
+
+        int bishopDifference = 0;
+
+        for (int i = 0; i < whiteBishopList.Count; i++)
+        {
+            bishopDifference += BitBoardHelper.BitCount(MagicData.GetBishopMoveBoard(whiteAllPieces, whiteBishopList[i])) >> 1;
+        }
+
+        for (int i = 0; i < blackBishopList.Count; i++)
+        {
+            bishopDifference -= BitBoardHelper.BitCount(MagicData.GetBishopMoveBoard(blackAllPieces, blackBishopList[i])) >> 1;
+        }
+
+        features[790] = bishopDifference * (1f - (phase / 100f));
+        features[791] = bishopDifference * (phase / 100f);
+
+
+
+        int rookDifference = 0;
+
+        for (int i = 0; i < whiteRookList.Count; i++)
+        {
+            rookDifference += BitBoardHelper.BitCount(MagicData.GetRookMoveBoard(whiteAllPieces, whiteRookList[i])) >> 1;
+        }
+
+        for (int i = 0; i < blackRookList.Count; i++)
+        {
+            rookDifference -= BitBoardHelper.BitCount(MagicData.GetRookMoveBoard(blackAllPieces, blackRookList[i])) >> 1;
+        }
+
+        features[792] = rookDifference * (1f - (phase / 100f));
+        features[793] = rookDifference * (phase / 100f);
+
+
+
+        int queenDifference = 0;
+
+        for (int i = 0; i < whiteQueenList.Count; i++)
+        {
+            queenDifference += BitBoardHelper.BitCount(MagicData.GetRookMoveBoard(whiteAllPieces, whiteQueenList[i]) | MagicData.GetBishopMoveBoard(whiteAllPieces, whiteQueenList[i])) >> 1;
+        }
+
+        for (int i = 0; i < blackQueenList.Count; i++)
+        {
+            queenDifference -= BitBoardHelper.BitCount(MagicData.GetRookMoveBoard(blackAllPieces, blackQueenList[i]) | MagicData.GetBishopMoveBoard(blackAllPieces, blackQueenList[i])) >> 1;
+        }
+
+        features[794] = queenDifference * (1f - (phase / 100f));
+        features[795] = queenDifference * (phase / 100f);
+    }
+
     #endregion
 
     #endregion
