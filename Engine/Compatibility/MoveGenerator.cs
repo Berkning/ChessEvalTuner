@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 
 public class MoveGenerator
 {
@@ -47,16 +48,9 @@ public class MoveGenerator
     {
         GenerateSlidingAttackMap();
 
-        ulong kingOrthoMask = MagicData.rookMasks[friendlyKingSquare] & enemyPieces; //Bitboard of enemy ortho attack blcoks by enemy's own pieces
+        ulong kingOrthoAttackMask = MagicData.GetRookMoveBoard(enemyPieces, friendlyKingSquare); //Bitboard of potential ortho attack directions
 
-        ulong kingOrthoIndex = (kingOrthoMask * MagicData.rookMagics[friendlyKingSquare]) >> MagicData.rookShifts[friendlyKingSquare];
-
-        ulong kingOrthoAttackMask = MagicData.rookMoveBitboards[friendlyKingSquare][kingOrthoIndex]; //Bitboard of potential ortho attack directions
-
-        ulong kingDiagMask = MagicData.bishopMasks[friendlyKingSquare] & enemyPieces; //Bitboard of enemy diags attack blcoks by enemy's own pieces
-        ulong kingDiagIndex = (kingDiagMask * MagicData.bishopMagics[friendlyKingSquare]) >> MagicData.bishopShifts[friendlyKingSquare];
-
-        ulong kingDiagAttackMask = MagicData.bishopMoveBitboards[friendlyKingSquare][kingDiagIndex]; //Bitboard of potential diag attack directions
+        ulong kingDiagAttackMask = MagicData.GetBishopMoveBoard(enemyPieces, friendlyKingSquare); //Bitboard of potential diag attack directions
 
         ulong kingAttackMask = kingOrthoAttackMask | kingDiagAttackMask; //Bitboard of enemy slider attack blcoks - ignoring slider behind slider
         ulong potentialKingAttackers = (kingOrthoAttackMask & enemyOrthos) | (kingDiagAttackMask & enemyDiags); //Bitboard of all enemy sliders that could be checking or pinning
@@ -147,11 +141,7 @@ public class MoveGenerator
         {
             int startSquare = BitBoardHelper.PopFirstBit(ref orthos);
 
-            ulong blockers = MagicData.rookMasks[startSquare] & (allPieces ^ (1UL << friendlyKingSquare)); //Remove friendly king square from blockers so attack ray will continue through it - prevents king from just moving backwards and still being in the ray
-
-            ulong index = (blockers * MagicData.rookMagics[startSquare]) >> MagicData.rookShifts[startSquare];
-
-            ulong moveBoard = MagicData.rookMoveBitboards[startSquare][index];
+            ulong moveBoard = MagicData.GetRookMoveBoard(allPieces ^ (1UL << friendlyKingSquare), startSquare); //Remove friendly king square from blockers so attack ray will continue through it - prevents king from just moving backwards and still being in the ray
 
             opponentSlidingAttackMap |= moveBoard;
         }
@@ -160,11 +150,7 @@ public class MoveGenerator
         {
             int startSquare = BitBoardHelper.PopFirstBit(ref diags);
 
-            ulong blockers = MagicData.bishopMasks[startSquare] & (allPieces ^ (1UL << friendlyKingSquare)); //Remove friendly king square from blockers so attack ray will continue through it - prevents king from just moving backwards and still being in the ray
-
-            ulong index = (blockers * MagicData.bishopMagics[startSquare]) >> MagicData.bishopShifts[startSquare];
-
-            ulong moveBoard = MagicData.bishopMoveBitboards[startSquare][index];
+            ulong moveBoard = MagicData.GetBishopMoveBoard(allPieces ^ (1UL << friendlyKingSquare), startSquare); //Remove friendly king square from blockers so attack ray will continue through it - prevents king from just moving backwards and still being in the ray
 
             opponentSlidingAttackMap |= moveBoard;
         }
@@ -301,10 +287,7 @@ public class MoveGenerator
         {
             int startSquare = BitBoardHelper.PopFirstBit(ref orthos);
 
-            ulong blockers = MagicData.rookMasks[startSquare] & allPieces;
-            ulong index = (blockers * MagicData.rookMagics[startSquare]) >> MagicData.rookShifts[startSquare];
-
-            ulong moveBoard = MagicData.rookMoveBitboards[startSquare][index] & moveMask;
+            ulong moveBoard = MagicData.GetRookMoveBoard(allPieces, startSquare) & moveMask;
 
             if (IsPinned(startSquare))
             {
@@ -323,10 +306,7 @@ public class MoveGenerator
         {
             int startSquare = BitBoardHelper.PopFirstBit(ref diags);
 
-            ulong blockers = MagicData.bishopMasks[startSquare] & allPieces;
-            ulong index = (blockers * MagicData.bishopMagics[startSquare]) >> MagicData.bishopShifts[startSquare];
-
-            ulong moveBoard = MagicData.bishopMoveBitboards[startSquare][index] & moveMask;
+            ulong moveBoard = MagicData.GetBishopMoveBoard(allPieces, startSquare) & moveMask;
 
             if (IsPinned(startSquare))
             {
@@ -528,7 +508,7 @@ public class MoveGenerator
         return (board.currentGameState & (1U << (11 + board.friendlyColorBit))) > 0;
     }
 
-    private bool InCheckAfterEnPassant(int square, int startRank, int capturedPawnSquare)
+    private bool InCheckAfterEnPassant(int square, int startRank, int capturedPawnSquare) //TODO: Seemingly doesn't work in "3k4/8/r7/1KPp4/8/8/8/8 w - d6 0 4"
     {
         int kingRank = BoardHelper.IndexToRank(friendlyKingSquare);
 
@@ -538,10 +518,12 @@ public class MoveGenerator
         int directionIncrement = (square - friendlyKingSquare) > 0 ? PrecomputedData.Right : PrecomputedData.Left;
 
         int startFile = BoardHelper.IndexToFile(friendlyKingSquare);
-        int fileCount = directionIncrement == 1 ? 8 - startFile : startFile; //number of files to check
+        int fileCount = directionIncrement == 1 ? 7 - startFile : startFile; //number of files to check
 
+        //TODO: pretty sure the fix is to set this to "int startSquare = friendlyKingSquare"
         int startSquare = friendlyKingSquare + directionIncrement; //We start at the friendly kings square and move one square away from the king; this is the first square where a piece could be blocking a potential check
 
+        //TODO: ... and let i start at 1 instead
         for (int i = 0; i < fileCount; i++)
         {
             int index = startSquare + i * directionIncrement;
@@ -628,5 +610,10 @@ public struct Move //FFFFTTTTTTSSSSSS - F = Flag bit - T = Target square bit - S
     {
         int _flag = flag;
         return _flag > 2 && _flag < 7;
+    }
+
+    public bool IsNullMove()
+    {
+        return data == 0;
     }
 }

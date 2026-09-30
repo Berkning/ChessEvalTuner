@@ -1,8 +1,9 @@
-using System.Collections.Generic;
+using System.Runtime.CompilerServices;
+using System.Runtime.Intrinsics.X86;
 
 public static class MagicData
 {
-    public static readonly ulong[] rookMagics = {
+    private static readonly ulong[] rookMagics = {
     12387163943325714576, 8060135981791801306, 6838921365805030679, 15327074671092356062,
     8948049086171909015, 8646981809803877574, 7545642128380474600, 7980450526490072013,
     11715410778596147490, 7479458305361812616, 1871454031738769090, 13573286386930301440,
@@ -20,13 +21,13 @@ public static class MagicData
     5636942678198345987, 254911904328319154, 12451059890057788723, 5262949047800561702,
     5199969201000851458, 14073467533597081611, 5601119559307888676, 3350305420536564742
     };
-    public static readonly int[] rookShifts = {
+    private static readonly int[] rookShifts = {
     51, 52, 52, 52, 52, 52, 52, 51, 53, 53, 53, 53, 53, 53, 54, 53, 52, 53, 53, 54, 54,
     53, 54, 53, 52, 53, 53, 53, 53, 53, 54, 53, 52, 53, 54, 53, 53, 53, 54, 53, 53, 53,
     53, 54, 53, 53, 54, 53, 53, 54, 54, 54, 53, 53, 54, 53, 52, 53, 53, 53, 53, 53, 53, 52
     };
 
-    public static readonly ulong[] bishopMagics = {
+    private static readonly ulong[] bishopMagics = {
     5966178808168023810, 1842125191758349089, 10533941675521962910, 9901199631436947968,
     5536055207521974789, 4869240562412309456, 8927944998205334323, 5743712825235349534,
     723969995097844231, 14725601650039456263, 5682012216124052366, 15986731778647950440,
@@ -44,7 +45,7 @@ public static class MagicData
     1316744904022118414, 8461130387919212577, 4664472141520903201, 16549360510536091673,
     14017898399109613073, 7798943797451169548, 16400764796920005654, 98340380231467648
     };
-    public static readonly int[] bishopShifts = {
+    private static readonly int[] bishopShifts = {
     58, 59, 59, 59, 59, 59, 59, 58, 59, 59, 59, 59, 59, 59, 59, 59, 59, 59, 57, 57, 57,
     57, 59, 59, 59, 59, 57, 54, 55, 57, 59, 59, 59, 59, 57, 55, 55, 57, 59, 59, 59, 59,
     57, 57, 57, 57, 59, 59, 59, 59, 59, 59, 59, 59, 59, 59, 58, 59, 59, 59, 59, 59, 59, 58
@@ -52,16 +53,79 @@ public static class MagicData
 
 
 
-    public static readonly ulong[] rookMasks;
-    public static readonly ulong[][] rookMoveBitboards = new ulong[64][];
+    private static readonly ulong[] rookMasks;
+    private static readonly ulong[][] rookMagicMoveBitboards = new ulong[64][];
+    private static readonly ulong[][] rookPEXTMoveBitboards = new ulong[64][];
 
     private static readonly ulong[][] rookBlockerArrangements = new ulong[64][];
 
 
-    public static readonly ulong[] bishopMasks;
-    public static readonly ulong[][] bishopMoveBitboards = new ulong[64][];
+    private static readonly ulong[] bishopMasks;
+    private static readonly ulong[][] bishopMagicMoveBitboards = new ulong[64][];
+    private static readonly ulong[][] bishopPEXTMoveBitboards = new ulong[64][];
 
     private static readonly ulong[][] bishopBlockerArrangements = new ulong[64][];
+
+
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ulong GetRookMoveBoard(ulong allPieces, int square) //TODO: Determine whether to use magics or PEXT on startup
+    {
+        if (Bmi2.IsSupported)
+        {
+            return GetRookBoardPEXT(allPieces, square);
+        }
+        else return GetRookBoardMagic(allPieces, square);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ulong GetBishopMoveBoard(ulong allPieces, int square) //TODO: Determine whether to use magics or PEXT on startup
+    {
+        if (Bmi2.IsSupported)
+        {
+            return GetBishopBoardPEXT(allPieces, square);
+        }
+        else return GetBishopBoardMagic(allPieces, square);
+    }
+
+
+
+
+    #region PEXT
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ulong GetRookBoardPEXT(ulong allPieces, int square) //TODO: Move benchmark from HardwareCapabilites.cs into this class to avoid having this public
+    {
+        return rookPEXTMoveBitboards[square][Bmi2.X64.ParallelBitExtract(allPieces, rookMasks[square])];
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ulong GetBishopBoardPEXT(ulong allPieces, int square) //TODO: Move benchmark from HardwareCapabilites.cs into this class to avoid having this public
+    {
+        return bishopPEXTMoveBitboards[square][Bmi2.X64.ParallelBitExtract(allPieces, bishopMasks[square])];
+    }
+    #endregion
+
+    #region Magic Bitboards
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ulong GetRookBoardMagic(ulong allPieces, int square) //TODO: Move benchmark from HardwareCapabilites.cs into this class to avoid having this public
+    {
+        ulong blockers = rookMasks[square] & allPieces;
+        ulong index = (blockers * rookMagics[square]) >> rookShifts[square];
+
+        return rookMagicMoveBitboards[square][index];
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ulong GetBishopBoardMagic(ulong allPieces, int square) //TODO: Move benchmark from HardwareCapabilites.cs into this class to avoid having this public
+    {
+        ulong blockers = bishopMasks[square] & allPieces;
+        ulong index = (blockers * bishopMagics[square]) >> bishopShifts[square];
+
+        return bishopMagicMoveBitboards[square][index];
+    }
+    #endregion
+
+
 
 
 
@@ -70,6 +134,7 @@ public static class MagicData
         rookMasks = new ulong[64];
         bishopMasks = new ulong[64];
 
+        //Masks
         for (int startSquare = 0; startSquare < 64; startSquare++)
         {
             for (int i = 0; i < 4; i++)
@@ -126,10 +191,11 @@ public static class MagicData
 
             rookBlockerArrangements[rookSquare] = blockerBoardsForSquare;
 
-            rookMoveBitboards[rookSquare] = GenerateRookMoves(rookSquare);
+            (ulong[] magicMoves, ulong[] pextMoves) = GenerateRookMoves(rookSquare);
+
+            rookMagicMoveBitboards[rookSquare] = magicMoves;
+            rookPEXTMoveBitboards[rookSquare] = pextMoves;
         }
-
-
 
         for (int bishopSquare = 0; bishopSquare < 64; bishopSquare++)
         {
@@ -158,23 +224,27 @@ public static class MagicData
 
             bishopBlockerArrangements[bishopSquare] = blockerBoardsForSquare;
 
-            bishopMoveBitboards[bishopSquare] = GenerateBishopMoves(bishopSquare);
+            (ulong[] magicMoves, ulong[] pextMoves) = GenerateBishopMoves(bishopSquare);
+
+            bishopMagicMoveBitboards[bishopSquare] = magicMoves;
+            bishopPEXTMoveBitboards[bishopSquare] = pextMoves;
         }
     }
 
-    private static ulong[] GenerateRookMoves(int square)
+    private static (ulong[] magic, ulong[] pext) GenerateRookMoves(int square)
     {
         int bits = 64 - rookShifts[square];
         int length = 1 << bits;
 
-        ulong[] moves = new ulong[length];
+        ulong[] magicMoves = new ulong[length];
+        ulong[] pextMoves = new ulong[rookBlockerArrangements[square].Length];
 
 
         for (int i = 0; i < rookBlockerArrangements[square].Length; i++)
         {
             ulong blockerArrangement = rookBlockerArrangements[square][i];
             ulong moveBoard = 0;
-            ulong index = (blockerArrangement * rookMagics[square]) >> rookShifts[square];
+            ulong magicIndex = (blockerArrangement * rookMagics[square]) >> rookShifts[square];
 
             for (int dirIndex = 0; dirIndex < 4; dirIndex++)
             {
@@ -191,26 +261,27 @@ public static class MagicData
                 }
             }
 
-            moves[index] = moveBoard;
+            magicMoves[magicIndex] = moveBoard;
+            pextMoves[i] = moveBoard;
         }
 
 
-        return moves;
+        return (magicMoves, pextMoves);
     }
 
-    private static ulong[] GenerateBishopMoves(int square)
+    private static (ulong[] magic, ulong[] pext) GenerateBishopMoves(int square)
     {
         int bits = 64 - bishopShifts[square];
         int length = 1 << bits;
 
-        ulong[] moves = new ulong[length];
-
+        ulong[] magicMoves = new ulong[length];
+        ulong[] pextMoves = new ulong[rookBlockerArrangements[square].Length];
 
         for (int i = 0; i < bishopBlockerArrangements[square].Length; i++)
         {
             ulong blockerArrangement = bishopBlockerArrangements[square][i];
             ulong moveBoard = 0;
-            ulong index = (blockerArrangement * bishopMagics[square]) >> bishopShifts[square];
+            ulong magicIndex = (blockerArrangement * bishopMagics[square]) >> bishopShifts[square];
 
             for (int dirIndex = 4; dirIndex < 8; dirIndex++)
             {
@@ -227,10 +298,11 @@ public static class MagicData
                 }
             }
 
-            moves[index] = moveBoard;
+            magicMoves[magicIndex] = moveBoard;
+            pextMoves[i] = moveBoard;
         }
 
 
-        return moves;
+        return (magicMoves, pextMoves);
     }
 }
