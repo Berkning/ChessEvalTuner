@@ -410,20 +410,9 @@ public class MLEvaluation
         ulong whitePawns = board.GetPieceList(Piece.Pawn, 0).bitboard;
         ulong blackPawns = board.GetPieceList(Piece.Pawn, 1).bitboard;
 
-        int whiteKingFile = BoardHelper.IndexToFile(board.whiteKingSquare);
-        int blackKingFile = BoardHelper.IndexToFile(board.blackKingSquare);
-
         for (int i = 0; i < 4; i++)
         {
-            int pawnStormRankDifference = 0;
-
-            if (whiteKingFile > 0 && BitBoardHelper.ContainsSquare(blackPawns, board.whiteKingSquare + PrecomputedData.UpLeft + PrecomputedData.Up * i)) pawnStormRankDifference++;
-            if (whiteKingFile < 7 && BitBoardHelper.ContainsSquare(blackPawns, board.whiteKingSquare + PrecomputedData.UpRight + PrecomputedData.Up * i)) pawnStormRankDifference++;
-            if (BitBoardHelper.ContainsSquare(blackPawns, board.whiteKingSquare + PrecomputedData.Up + PrecomputedData.Up * i)) pawnStormRankDifference++;
-
-            if (blackKingFile > 0 && BitBoardHelper.ContainsSquare(whitePawns, board.blackKingSquare + PrecomputedData.DownLeft + PrecomputedData.Down * i)) pawnStormRankDifference--;
-            if (blackKingFile < 7 && BitBoardHelper.ContainsSquare(whitePawns, board.blackKingSquare + PrecomputedData.DownRight + PrecomputedData.Down * i)) pawnStormRankDifference--;
-            if (BitBoardHelper.ContainsSquare(whitePawns, board.blackKingSquare + PrecomputedData.Down + PrecomputedData.Down * i)) pawnStormRankDifference--;
+            int pawnStormRankDifference = BitBoardHelper.BitCount(PrecomputedData.kingPawnCoverMasks[board.whiteKingSquare + PrecomputedData.Up * i] & blackPawns) - BitBoardHelper.BitCount(PrecomputedData.kingPawnCoverMasks[board.blackKingSquare + 64 + PrecomputedData.Down * i] & whitePawns); ;
 
 
             features[786 + i] = pawnStormRankDifference * (1f - phase / 100f); //TODO: Try () around the division
