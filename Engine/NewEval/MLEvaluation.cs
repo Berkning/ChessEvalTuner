@@ -4,8 +4,11 @@ using Newtonsoft.Json;
 public class MLEvaluation
 {
     //TODO: Mobility? Rooks on open files? Mopup score? 
-    public static readonly double[] weights = new double[768 + 6 + 9 + 7 + 6]; //TODO: We can easily eliminate bounds checks when using these arrays
-    public static double[] features = new double[weights.Length]; //TODO: We can easily eliminate bounds checks when using these arrays
+    private const int WeigthCount = 768 + 12 + 18 + 14 + 6;
+    private const int EndGameIndexOffset = WeigthCount / 2;
+    public static readonly double[] weights = new double[WeigthCount]; //TODO: We can easily eliminate bounds checks when using these arrays
+
+    public static double[] features = new double[WeigthCount]; //TODO: We can easily eliminate bounds checks when using these arrays
     public static double bias;
 
     public double GetEval(Board board)
@@ -15,9 +18,9 @@ public class MLEvaluation
             features[i] = 0;
         }
 
-        CalculatePhase(board);
-
         CalculateFeatures(board);
+
+        CalculatePhase(board);
 
 
 
@@ -94,11 +97,10 @@ public class MLEvaluation
     private const double QueenPhase = 4f;
 
     private const double MaxPhase = KnightPhase * 4f + BishopPhase * 4f + RookPhase * 4f + QueenPhase * 2f;
-    private double phase; //Phase is between 0 (MG) and 100 (EwhiteBishopListG)
 
     private void CalculatePhase(Board board)
     {
-        phase = MaxPhase;
+        double phase = MaxPhase;
 
         phase -= board.GetPieceList(Piece.Knight, 0).Count * KnightPhase;
         phase -= board.GetPieceList(Piece.Knight, 1).Count * KnightPhase;
@@ -110,7 +112,14 @@ public class MLEvaluation
         phase -= board.GetPieceList(Piece.Queen, 1).Count * QueenPhase;
 
         //TODO:           Remove this when working with ints vvvvvv
-        phase = (phase * 100f + (MaxPhase / 2f)) / MaxPhase - 0.5f;
+        phase = (phase * 100f + (MaxPhase / 2f)) / MaxPhase - 0.5f;  //Phase is between 0 (MG) and 100 (EG)
+
+
+        for (int i = 0; i < EndGameIndexOffset; i++)
+        {
+            features[i] *= 1f - (phase / 100f);
+            features[i + EndGameIndexOffset] *= phase / 100f;
+        }
     }
 
     #endregion
@@ -127,8 +136,8 @@ public class MLEvaluation
         //TODO: Use the allPieceList array instead of calling GetPiecelist
 
         //SetPSQTFeaturesWhite(board.GetPieceList(Piece.King, 0), 64 * 0);
-        features[board.whiteKingSquare] += 1f - (phase / 100f);
-        features[board.whiteKingSquare + 384] += phase / 100f;
+        features[board.whiteKingSquare] = 1;
+        features[board.whiteKingSquare + EndGameIndexOffset] = 1;
 
         SetPSQTFeaturesWhite(board.GetPieceList(Piece.Pawn, 0), 64 * 1);
         SetPSQTFeaturesWhite(board.GetPieceList(Piece.Knight, 0), 64 * 2);
@@ -138,8 +147,8 @@ public class MLEvaluation
 
 
         //SetPSQTFeaturesBlack(board.GetPieceList(Piece.King, 1), 64 * 0);
-        features[BoardHelper.FlipIndex(board.blackKingSquare)] -= 1f - (phase / 100f);
-        features[BoardHelper.FlipIndex(board.blackKingSquare) + 384] -= phase / 100f;
+        features[BoardHelper.FlipIndex(board.blackKingSquare)] = 1;
+        features[BoardHelper.FlipIndex(board.blackKingSquare) + EndGameIndexOffset] = 1;
 
         SetPSQTFeaturesBlack(board.GetPieceList(Piece.Pawn, 1), 64 * 1);
         SetPSQTFeaturesBlack(board.GetPieceList(Piece.Knight, 1), 64 * 2);
@@ -153,9 +162,9 @@ public class MLEvaluation
     {
         for (int i = 0; i < list.Count; i++)
         {
-            features[list[i] + PSQTOffset] += 1f - (phase / 100f); //Activate middlegame PSQT at this square with intensity equal to how "much" we are in the middlegame
+            features[list[i] + PSQTOffset] = 1; //Activate middlegame PSQT at this square with intensity equal to how "much" we are in the middlegame
 
-            features[list[i] + PSQTOffset + 384] += phase / 100f; //Activate endgame PSQT at this square with intensity equal to how "much" we are in the endgame 
+            features[list[i] + PSQTOffset + EndGameIndexOffset] = 1; //Activate endgame PSQT at this square with intensity equal to how "much" we are in the endgame 
         }
     }
 
@@ -167,34 +176,43 @@ public class MLEvaluation
             //TODO: Rename "flipindex" to "mirrorindex"
             int mirroredSquare = BoardHelper.FlipIndex(list[i]);
 
-            features[mirroredSquare + PSQTOffset] -= 1f - (phase / 100f); //Activate middlegame PSQT at this square with intensity equal to how "much" we are in the middlegame
+            features[mirroredSquare + PSQTOffset] = 1; //Activate middlegame PSQT at this square with intensity equal to how "much" we are in the middlegame
 
-            features[mirroredSquare + PSQTOffset + 384] -= phase / 100f; //Activate endgame PSQT at this square with intensity equal to how "much" we are in the endgame 
+            features[mirroredSquare + PSQTOffset + EndGameIndexOffset] = 1; //Activate endgame PSQT at this square with intensity equal to how "much" we are in the endgame 
         }
     }
     #endregion
 
 
     #region Material
-    //5 material differences + 1 bishop pair difference = 6 features
+    //(5 material differences + 1 bishop pair difference) * 2 = 12 features
     private void CalculateMaterial(Board board)
     {
         //TODO: Use the allPieceList array instead of calling GetPiecelist
-        features[768] = board.GetPieceList(Piece.Pawn, 0).Count - board.GetPieceList(Piece.Pawn, 1).Count;
-        features[769] = board.GetPieceList(Piece.Knight, 0).Count - board.GetPieceList(Piece.Knight, 1).Count;
-        features[770] = board.GetPieceList(Piece.Bishop, 0).Count - board.GetPieceList(Piece.Bishop, 1).Count;
-        features[771] = board.GetPieceList(Piece.Rook, 0).Count - board.GetPieceList(Piece.Rook, 1).Count;
-        features[772] = board.GetPieceList(Piece.Queen, 0).Count - board.GetPieceList(Piece.Queen, 1).Count;
+        features[384] = board.GetPieceList(Piece.Pawn, 0).Count - board.GetPieceList(Piece.Pawn, 1).Count;
+        features[385] = board.GetPieceList(Piece.Knight, 0).Count - board.GetPieceList(Piece.Knight, 1).Count;
+        features[386] = board.GetPieceList(Piece.Bishop, 0).Count - board.GetPieceList(Piece.Bishop, 1).Count;
+        features[387] = board.GetPieceList(Piece.Rook, 0).Count - board.GetPieceList(Piece.Rook, 1).Count;
+        features[388] = board.GetPieceList(Piece.Queen, 0).Count - board.GetPieceList(Piece.Queen, 1).Count;
 
         double whiteBishopPair = board.GetPieceList(Piece.Bishop, 0).Count > 1 ? 1f : 0f; //TODO: Obv don't call this again
         double blackBishopPair = board.GetPieceList(Piece.Bishop, 1).Count > 1 ? 1f : 0f; //TODO: Obv don't call this again
 
-        features[773] = whiteBishopPair - blackBishopPair;
+        features[389] = whiteBishopPair - blackBishopPair;
+
+
+        features[384 + EndGameIndexOffset] = board.GetPieceList(Piece.Pawn, 0).Count - board.GetPieceList(Piece.Pawn, 1).Count;
+        features[385 + EndGameIndexOffset] = board.GetPieceList(Piece.Knight, 0).Count - board.GetPieceList(Piece.Knight, 1).Count;
+        features[386 + EndGameIndexOffset] = board.GetPieceList(Piece.Bishop, 0).Count - board.GetPieceList(Piece.Bishop, 1).Count;
+        features[387 + EndGameIndexOffset] = board.GetPieceList(Piece.Rook, 0).Count - board.GetPieceList(Piece.Rook, 1).Count;
+        features[388 + EndGameIndexOffset] = board.GetPieceList(Piece.Queen, 0).Count - board.GetPieceList(Piece.Queen, 1).Count;
+
+        features[389 + EndGameIndexOffset] = whiteBishopPair - blackBishopPair;
     }
     #endregion
 
     #region Pawn Structure
-    //1 doubled pawn difference + 1 isolated pawn difference + (0) backward pawn difference + 6 passed pawn buckets + 1 connected passed pawn difference = 9 features
+    //(1 doubled pawn difference + 1 isolated pawn difference + (0) backward pawn difference + 6 passed pawn buckets + 1 connected passed pawn difference) * 2 = 18 features
     private void CalculatePawnStructure(Board board)
     {
         ulong whitePawnBoard = board.GetPieceList(Piece.Pawn, 0).bitboard;
@@ -211,7 +229,8 @@ public class MLEvaluation
             doubledPawnDifference -= Math.Max(0, BitBoardHelper.BitCount(blackPawnBoard & fileMask) - 1);
         }
 
-        features[774] = doubledPawnDifference;
+        features[390] = doubledPawnDifference;
+        features[390 + EndGameIndexOffset] = doubledPawnDifference;
         //Console.WriteLine("doubledPawnDifference: " + doubledPawnDifference);
 
 
@@ -250,7 +269,8 @@ public class MLEvaluation
             if ((blackPawnBoard & isolationMask) == 0) isolatedPawnDifference--;
         }
 
-        features[775] = isolatedPawnDifference;
+        features[391] = isolatedPawnDifference;
+        features[391 + EndGameIndexOffset] = isolatedPawnDifference;
         //Console.WriteLine("isolatedPawnDifference: " + isolatedPawnDifference);
 
 
@@ -277,7 +297,8 @@ public class MLEvaluation
                 //Console.WriteLine("white has passed pawn");
 
                 int rank = BoardHelper.IndexToRank(pawnSquare);
-                features[776 - 1 + rank] = features[776 - 1 + rank] + 1;
+                features[392 + rank - 1] = features[392 + rank - 1] + 1; //Rank will be 1-2-3-4-5-6 because we are working with pawns
+                features[392 + rank - 1 + EndGameIndexOffset] = features[392 + rank - 1 + EndGameIndexOffset] + 1; //Rank will be 1-2-3-4-5-6 because we are working with pawns
 
                 ulong isolationMask = 0;
                 int file = BoardHelper.IndexToFile(pawnSquare);
@@ -305,7 +326,8 @@ public class MLEvaluation
                 //Console.WriteLine("Black has passed pawn");
 
                 int rank = 7 - BoardHelper.IndexToRank(pawnSquare);
-                features[776 - 1 + rank] = features[776 - 1 + rank] - 1;
+                features[392 + rank - 1] = features[392 + rank - 1] - 1; //Rank will be 1-2-3-4-5-6 because we are working with pawns
+                features[392 + rank - 1 + EndGameIndexOffset] = features[392 + rank - 1 + EndGameIndexOffset] - 1; //Rank will be 1-2-3-4-5-6 because we are working with pawns
 
                 ulong isolationMask = 0;
                 int file = BoardHelper.IndexToFile(pawnSquare);
@@ -317,14 +339,15 @@ public class MLEvaluation
             }
         }
 
-        features[782] = connectedPassedPawnDifference;
+        features[398] = connectedPassedPawnDifference;
+        features[398 + EndGameIndexOffset] = connectedPassedPawnDifference;
         //Console.WriteLine("connectedPassedPawnDifference: " + connectedPassedPawnDifference);
     }
     #endregion
 
     #region King Safety
     //TODO: Add way more features
-    //1 missing pawns on top of king difference + 1 hole in kings pawnshield difference + 1 complete open file above king difference + 4 pawn storm rank differences above king = 7 feature
+    //(1 missing pawns on top of king difference + 1 hole in kings pawnshield difference + 1 complete open file above king difference + 4 pawn storm rank differences above king) * 2 = 14 features
     private void CalculateKingSafety(Board board)
     {
         //TODO: Calculate in PrecomputedData
@@ -348,7 +371,8 @@ public class MLEvaluation
 
         if (!BitBoardHelper.ContainsSquare(board.GetPieceList(Piece.Pawn, 1).bitboard, board.blackKingSquare + PrecomputedData.Down)) missingPawnDefenseDifference--;
 
-        features[783] = missingPawnDefenseDifference * (1f - phase / 100f); //TODO: Try () around the division
+        features[399] = missingPawnDefenseDifference;
+        features[399 + EndGameIndexOffset] = missingPawnDefenseDifference;
 
 
 
@@ -375,7 +399,8 @@ public class MLEvaluation
 
         if (!(BitBoardHelper.ContainsSquare(board.GetPieceList(Piece.Pawn, 1).bitboard, board.blackKingSquare + PrecomputedData.Down) || BitBoardHelper.ContainsSquare(board.GetPieceList(Piece.Pawn, 1).bitboard, board.blackKingSquare + PrecomputedData.Down + PrecomputedData.Down))) missingPawnShieldDifference--;
 
-        features[784] = missingPawnShieldDifference * (1f - phase / 100f); //TODO: Try () around the division
+        features[400] = missingPawnShieldDifference;
+        features[400 + EndGameIndexOffset] = missingPawnShieldDifference;
 
 
 
@@ -401,7 +426,8 @@ public class MLEvaluation
 
         if ((PrecomputedData.fileMasks[kingFile] & board.GetPieceList(Piece.Pawn, 1).bitboard) == 0) openFileAboveKingDifference--;
 
-        features[785] = openFileAboveKingDifference * (1f - phase / 100f); //TODO: Try () around the division
+        features[401] = openFileAboveKingDifference;
+        features[401 + EndGameIndexOffset] = openFileAboveKingDifference;
 
 
 
@@ -415,7 +441,8 @@ public class MLEvaluation
             int pawnStormRankDifference = BitBoardHelper.BitCount(PrecomputedData.kingPawnCoverMasks[board.whiteKingSquare + PrecomputedData.Up * i] & blackPawns) - BitBoardHelper.BitCount(PrecomputedData.kingPawnCoverMasks[board.blackKingSquare + 64 + PrecomputedData.Down * i] & whitePawns); ;
 
 
-            features[786 + i] = pawnStormRankDifference * (1f - phase / 100f); //TODO: Try () around the division
+            features[402 + i] = pawnStormRankDifference;
+            features[402 + i + EndGameIndexOffset] = pawnStormRankDifference;
         }
     }
     #endregion
@@ -457,8 +484,8 @@ public class MLEvaluation
             bishopDifference -= BitBoardHelper.BitCount(MagicData.GetBishopMoveBoard(blackAllPieces, blackBishopList[i])) >> 1;
         }
 
-        features[790] = bishopDifference * (1f - (phase / 100f));
-        features[791] = bishopDifference * (phase / 100f);
+        features[406] = bishopDifference;
+        features[406 + EndGameIndexOffset] = bishopDifference;
 
 
 
@@ -474,8 +501,8 @@ public class MLEvaluation
             rookDifference -= BitBoardHelper.BitCount(MagicData.GetRookMoveBoard(blackAllPieces, blackRookList[i])) >> 1;
         }
 
-        features[792] = rookDifference * (1f - (phase / 100f));
-        features[793] = rookDifference * (phase / 100f);
+        features[407] = rookDifference;
+        features[407 + EndGameIndexOffset] = rookDifference;
 
 
 
@@ -491,8 +518,8 @@ public class MLEvaluation
             queenDifference -= BitBoardHelper.BitCount(MagicData.GetRookMoveBoard(blackAllPieces, blackQueenList[i]) | MagicData.GetBishopMoveBoard(blackAllPieces, blackQueenList[i])) >> 1;
         }
 
-        features[794] = queenDifference * (1f - (phase / 100f));
-        features[795] = queenDifference * (phase / 100f);
+        features[408] = queenDifference;
+        features[408 + EndGameIndexOffset] = queenDifference;
     }
 
     #endregion
