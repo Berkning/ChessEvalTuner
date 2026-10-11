@@ -55,11 +55,17 @@ public class MLEvaluation
     public static void InitializeWeights()
     {
         //Initialize material weights by hand to give a good starting point
-        weights[768] = 0.390625f; //Pawn weight
-        weights[769] = 1.171875f; //Knight weight
-        weights[770] = 1.171875f; //Bishop weight
-        weights[771] = 1.953125f; //Rook weight
-        weights[772] = 3.515625f; //Queen weight
+        weights[384] = 0.390625f; //Pawn weight
+        weights[385] = 1.171875f; //Knight weight
+        weights[386] = 1.171875f; //Bishop weight
+        weights[387] = 1.953125f; //Rook weight
+        weights[388] = 3.515625f; //Queen weight
+
+        weights[384 + EndGameIndexOffset] = 0.390625f; //Pawn weight
+        weights[385 + EndGameIndexOffset] = 1.171875f; //Knight weight
+        weights[386 + EndGameIndexOffset] = 1.171875f; //Bishop weight
+        weights[387 + EndGameIndexOffset] = 1.953125f; //Rook weight
+        weights[388 + EndGameIndexOffset] = 3.515625f; //Queen weight
     }
 
     public static void LogData()
